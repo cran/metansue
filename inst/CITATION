@@ -20,6 +20,21 @@ c(
 			person("Paolo", "Fusar-Poli")
 		),
 	    journal = "JAMA Psychiatry",
-	    year = 2015
+	    year = 2015,
+        volume = 72,
+        pages = c(1243, 1251)
+	),
+	bibentry(
+	    bibtype = "Article",
+	    title = "Cognitive-behavioral therapy for body dysmorphic disorder: A systematic review and meta-analysis of randomized controlled trials",
+	    author = c(
+			person("Amy", "Harrison"),
+			person("Lorena", "Fernandez de la Cruz"),
+			person("Jesper", "Enander"),
+			person("Joaquim", "Radua"),
+			person("David", "Mataix-Cols")
+		),
+	    journal = "Clinical Psychology Review",
+	    year = 2016
 	)
 );

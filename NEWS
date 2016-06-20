@@ -1,0 +1,6 @@
+metansue v1.1 (Release date: 2016-06-20)
+========================================
+
+Changes:
+
+* Added r_in_smd_from_t_means_and_sds and subset functions.

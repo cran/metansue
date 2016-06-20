@@ -19,7 +19,7 @@
 \references{
   Radua, J., Schmidt, A., Borgwardt, S., Heinz, A., Schlagenhauf, F., McGuire, P., Fusar-Poli, P. (2015)
   Ventral striatal activation during reward processing in psychosis. A neurofunctional meta-analysis.
-  \emph{JAMA Psychiatry}, in Press.
+  \emph{JAMA Psychiatry}, \bold{72}, 1243--1251.
 }
 \author{Joaquim Radua}
 \seealso{

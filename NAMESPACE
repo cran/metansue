@@ -10,9 +10,12 @@ export(
     metalm, metalm.meta.nsue,
     plot.meta.nsue,
     print.leave1out.nsue, print.meta.nsue, print.nsue,
+    r_in_smd_from_t_means_and_sds1,
+    r_in_smd_from_t_means_and_sds2,
     residuals.meta.nsue,
     smc_from_t,
     smd_from_t,
+    subset.meta.nsue,
     summary.leave1out.nsue, summary.meta.nsue,
     z_from_r
 )
@@ -31,6 +34,7 @@ S3method(print, leave1out.nsue)
 S3method(print, meta.nsue)
 S3method(print, nsue)
 S3method(residuals, meta.nsue)
+S3method(subset, meta.nsue)
 S3method(summary, leave1out.nsue)
 S3method(summary, meta.nsue)
 

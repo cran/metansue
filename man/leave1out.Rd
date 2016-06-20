@@ -12,7 +12,7 @@
 \seealso{
   \code{\link{leave1out.nsue}} for computing leave-one-out diagnostics for \code{"nsue"} objects.
 
-  \code{\link{smc_from_t}}, \code{\link[=smc_from_t]{smd_from_t}} and \code{\link[=smc_from_t]{z_from_r}} for creating \code{"nsue"} objects.
+  \code{\link{smc_from_t}}, \code{\link[=smc_from_t]{smd_from_t}}, \code{\link[=smc_from_t]{z_from_r}} and \code{\link[=smc_from_t]{r_in_smd_from_t_means_and_sds1}} for creating \code{"nsue"} objects.
 
   \code{\link[=meta.nsue]{meta}} for conducting a meta-analysis.
 }

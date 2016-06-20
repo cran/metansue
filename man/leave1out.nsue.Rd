@@ -18,7 +18,7 @@
   \item{tol}{tolerance in the REML estimation of \eqn{\tau^2}.}
   \item{...}{other arguments (currently ignored).}
 }
-\details{Use \code{\link{smc_from_t}}, \code{\link[=smc_from_t]{smd_from_t}} or \code{\link[=smc_from_t]{z_from_r}} to create \code{"nsue"} objects.
+\details{Use \code{\link{smc_from_t}}, \code{\link[=smc_from_t]{smd_from_t}}, \code{\link[=smc_from_t]{z_from_r}} or \code{\link[=smc_from_t]{r_in_smd_from_t_means_and_sds1}} to create \code{"nsue"} objects.
 
 Models for \code{\link{meta.nsue}}, \code{leave1out.nsue} and \code{\link{metalm.meta.nsue}} are specified symbolically. The \code{formula} is a series of terms which specify a linear predictor for \code{x}. A formula specification of the form \code{first + second} indicates a multiple regression by \code{first} and \code{second}.  A specification of the form \code{first:second} indicates the interaction of \code{first} with \code{second}. The specification \code{first*second} is the same as \code{first + second + first:second}.
 
@@ -31,11 +31,11 @@ Each hypothesis must be a matrix (or vector) giving linear combinations of coeff
 \references{
   Radua, J., Schmidt, A., Borgwardt, S., Heinz, A., Schlagenhauf, F., McGuire, P., Fusar-Poli, P. (2015)
   Ventral striatal activation during reward processing in psychosis. A neurofunctional meta-analysis.
-  \emph{JAMA Psychiatry}, in Press.
+  \emph{JAMA Psychiatry}, \bold{72}, 1243--51.
 }
 \author{Joaquim Radua}
 \seealso{
-  \code{\link{smc_from_t}}, \code{\link[=smc_from_t]{smd_from_t}} and \code{\link[=smc_from_t]{z_from_r}} for creating \code{"nsue"} objects.
+  \code{\link{smc_from_t}}, \code{\link[=smc_from_t]{smd_from_t}}, \code{\link[=smc_from_t]{z_from_r}} and \code{\link[=smc_from_t]{r_in_smd_from_t_means_and_sds1}} for creating \code{"nsue"} objects.
 
   \code{\link[=meta.nsue]{meta}} for conducting a meta-analysis.
 }

@@ -28,7 +28,7 @@ Also, publication bias cannot be excluded in case of negative results, whereas i
 
   Radua, J., Schmidt, A., Borgwardt, S., Heinz, A., Schlagenhauf, F., McGuire, P., Fusar-Poli, P. (2015)
   Ventral striatal activation during reward processing in psychosis. A neurofunctional meta-analysis.
-  \emph{JAMA Psychiatry}, in Press.
+  \emph{JAMA Psychiatry}, \bold{72}, 1243--51.
 
   Sterne, J.A., Sutton, A.J., Ioannidis, J.P., Terrin, N., Jones, D.R., Lau, J., Carpenter, J., 
 Rucker, G., Harbord, R.M., Schmid, C.H., Tetzlaff, J., Deeks, J.J., Peters, J., Macaskill, P., Schwarzer, G., Duval, S., Altman, D.G., Moher, D., Higgins, J.P. (2011)

@@ -364,8 +364,8 @@ function (x)
 .format.measure <-
 function (measure) 
 {
-    switch(measure, cor = "correlation", smc = "standardized mean change", 
-        smd = "standardized mean difference")
+    switch(measure, cor = "correlation", `cor in smd` = "correlation in standardized mean difference", 
+        smc = "standardized mean change", smd = "standardized mean difference")
 }
 .format.perc2 <-
 function (x) 
@@ -479,7 +479,7 @@ function (x, data = data.frame(), formula = ~1, hypotheses = NULL,
     model <- .check.formula(call, formula, n.stud)
     hypotheses <- .check.hypotheses(call, hypotheses, model)
     if (n.imp < 2) {
-        .stop(call, "At least 2 imputations XXX")
+        .stop(call, "The number of imputations must be at least 2")
     }
     if (length(unique(x$labels)) < n.stud) {
         .warning("This analysis understand repeated measures as separate studies")
@@ -719,7 +719,7 @@ function (x, formula, maxiter = 100, tol = 1e-06, ...)
 {
     call <- match.call()
     if (!inherits(x, "meta.nsue")) {
-        .stop(call, "It must be a 'meta.nsue' object XXX")
+        .stop(call, "The argument must be a 'meta.nsue' object")
     }
     x$model <- .check.formula(call, formula, x$known$n.stud + 
         x$unknown$n.stud)
@@ -768,8 +768,8 @@ function (x, X, model, hypotheses, n.imp, n.bins, maxiter, tol,
     rm$weights <- apply(apply(rm.M, 1, function(x) {
         x/(1 + (sum(x) - 1) * rm$r)
     }), 1, sum)
-    known.weights = rm$weights[known]
-    unknown.weights = rm$weights[unknown]
+    known.weights <- rm$weights[known]
+    unknown.weights <- rm$weights[unknown]
     if (measure == "cor" || measure == "cor in smd") {
         mll <- function(tau2_coef, known, known.y, known.y.var, 
             known.weights, unknown, unknown.y_lo, unknown.y_up, 
@@ -973,7 +973,7 @@ function (x, data = data.frame(), formula = ~1, hypotheses = NULL,
     model <- .check.formula(call, formula, n.stud)
     hypotheses <- .check.hypotheses(call, hypotheses, model)
     if (n.imp < 2) {
-        .stop(call, "At least 2 imputations XXX")
+        .stop(call, "The number of imputations must be at least 2")
     }
     .meta.nsue(x, X, model, hypotheses, n.imp, n.bins, maxiter, 
         tol)
@@ -1162,6 +1162,134 @@ function (object, ...)
     }
     residuals
 }
+.r_in_smd_from_sds <-
+function (var.diff, df1, var1.sum, sd1.prod, df2, var2.sum, sd2.prod, 
+    r.min, r.max) 
+{
+    r <- (df1 * (var1.sum - var.diff) + df2 * (var2.sum - var.diff))/(2 * 
+        (df1 * sd1.prod + df2 * sd2.prod))
+    r[r < r.min] = r.min
+    r[r > r.max] = r.max
+    r
+}
+r_in_smd_from_t_means_and_sds1 <-
+function (t, n1, mean1.pre, sd1.pre, mean1.post, sd1.post, n2, 
+    mean2.pre, sd2.pre, mean2.post, sd2.post, alpha = 0.05, labels = "study", 
+    r.range = c(0, 0.99), rm.r = 0.3) 
+{
+    call <- match.call()
+    if (missing(t) || missing(n1) || missing(n2)) {
+        .stop(call, "You must specify t, n1 and n2")
+    }
+    if (!is.numeric(t)) {
+        .stop(call, "t is not a numeric vector")
+    }
+    n.stud <- length(t)
+    if (!n.stud) {
+        .stop(call, "No studies to meta-analyze")
+    }
+    n1 <- .check.n(call, n1, 2, n.stud)
+    if (!is.numeric(mean1.pre)) {
+        .stop(call, "mean1.pre is not a numeric vector")
+    }
+    if (!is.numeric(sd1.pre) || any(sd1.pre < 0)) {
+        .stop(call, "sd1.pre is not a positive numeric vector")
+    }
+    if (!is.numeric(mean1.post)) {
+        .stop(call, "mean1.post is not a numeric vector")
+    }
+    if (!is.numeric(sd1.post) || any(sd1.post < 0)) {
+        .stop(call, "sd1.post is not a positive numeric vector")
+    }
+    n2 <- .check.n(call, n2, 2, n.stud)
+    if (!is.numeric(mean2.pre)) {
+        .stop(call, "mean2.pre is not a numeric vector")
+    }
+    if (!is.numeric(sd2.pre) || any(sd2.pre < 0)) {
+        .stop(call, "sd2.pre is not a positive numeric vector")
+    }
+    if (!is.numeric(mean2.post)) {
+        .stop(call, "mean2.post is not a numeric vector")
+    }
+    if (!is.numeric(sd2.post) || any(sd2.post < 0)) {
+        .stop(call, "sd2.post is not a positive numeric vector")
+    }
+    alpha <- .check.alpha(call, alpha, n.stud)
+    labels <- .check.labels(call, labels, n.stud)
+    if (!is.numeric(r.range) || r.range[1] > r.range[2] || r.range[1] < 
+        -1 || r.range[2] > 1) {
+        .stop(call, "Incorrect r.range")
+    }
+    if (!is.numeric(rm.r) || rm.r < -1 || rm.r > 1) {
+        .stop(call, "Incorrect rm.r")
+    }
+    for (i in 1:n.stud) {
+        if ((is.na(t[i]) && is.na(alpha[i])) || is.na(n1[i]) || 
+            is.na(n2[i])) {
+            .stop("Not enough information in study", labels[i])
+        }
+    }
+    n <- n1 + n2
+    df <- n - 2
+    inv_n1_n2 <- 1/n1 + 1/n2
+    j <- .d_j(df)
+    df1 <- n1 - 1
+    df2 <- n2 - 1
+    diff <- mean1.post - mean1.pre - mean2.post + mean2.pre
+    k_t2var <- diff^2/inv_n1_n2
+    var1.sum <- sd1.pre^2 + sd1.post^2
+    var2.sum <- sd2.pre^2 + sd2.post^2
+    sd1.prod <- sd1.pre * sd1.post
+    sd2.prod <- sd2.pre * sd2.post
+    r.min <- r.range[1]
+    r.max <- r.range[2]
+    obj <- list(measure = "cor in smd", y = atanh(.r_in_smd_from_sds(k_t2var/t^2, 
+        df1, var1.sum, sd1.prod, df2, var2.sum, sd2.prod, r.min, 
+        r.max)), y_lo = atanh(rep(r.min, n.stud)), y_up = atanh(rep(r.max, 
+        n.stud)), y.var = (n2/n)^2/(n1 - 3) + (n1/n)^2/(n2 - 
+        3), smd = data.frame(diff, df1, var1.sum, sd1.prod, df2, 
+        var2.sum, sd2.prod, j = j, y2var_k1 = inv_n1_n2, y2var_k2 = 1 - 
+            (df - 2)/(df * j^2)), labels = labels, rm = list(r = rm.r))
+    class(obj) <- "nsue"
+    obj
+}
+.r_in_smd_from_t_means_and_sds2 <-
+function (x, maxiter, tol) 
+{
+    x$measure <- "smd"
+    smd <- x$smd[x$known$i, ]
+    x$known$y <- smd$j * smd$diff/sqrt((smd$df1 * (smd$var1.sum - 
+        2 * smd$sd1.prod * tanh(x$known$y)) + smd$df2 * (smd$var2.sum - 
+        2 * smd$sd2.prod * tanh(x$known$y)))/(smd$df1 + smd$df2))
+    smd <- x$smd[x$unknown$i, ]
+    if (length(x$unknown$y)) {
+        x$unknown$y <- smd$j * smd$diff/sqrt((smd$df1 * (smd$var1.sum - 
+            2 * smd$sd1.prod * tanh(x$unknown$y)) + smd$df2 * 
+            (smd$var2.sum - 2 * smd$sd2.prod * tanh(x$unknown$y)))/(smd$df1 + 
+            smd$df2))
+    }
+    x$y2var_k1 = x$smd$y2var_k1
+    x$y2var_k2 = x$smd$y2var_k2
+    x$y.var <- NULL
+    x$smd <- NULL
+    .metalm.meta.nsue(x, maxiter, tol)
+}
+r_in_smd_from_t_means_and_sds2 <-
+function (x, maxiter = 200, tol = 1e-06) 
+{
+    call <- match.call()
+    if (inherits(x, "leave1out.nsue")) {
+        for (i in 1:length(x)) {
+            x[[i]]$meta.nsue = .r_in_smd_from_t_means_and_sds2(x[[i]]$meta.nsue, 
+                maxiter, tol)
+        }
+        return(x)
+    }
+    if (!inherits(x, "meta.nsue")) {
+        .stop(call, "The argument must be a 'meta.nsue' object")
+    }
+    .r_in_smd_from_t_means_and_sds2(x, maxiter, tol)
+}
 .signif.up <-
 function (x, digits = 6) 
 {
@@ -1185,6 +1313,9 @@ function (t, n, alpha = 0.05, labels = "study", rm.r = 0.3)
     n <- .check.n(call, n, 3, n.stud)
     alpha <- .check.alpha(call, alpha, n.stud)
     labels <- .check.labels(call, labels, n.stud)
+    if (!is.numeric(rm.r) || rm.r < -1 || rm.r > 1) {
+        .stop(call, "Incorrect rm.r")
+    }
     for (i in 1:n.stud) {
         if ((is.na(t[i]) && is.na(alpha[i])) || is.na(n[i])) {
             stop("Not enough information in study", labels[i])
@@ -1219,6 +1350,9 @@ function (t, n1, n2, alpha = 0.05, labels = "study", rm.r = 0.3)
     n2 <- .check.n(call, n2, 2, n.stud)
     alpha <- .check.alpha(call, alpha, n.stud)
     labels <- .check.labels(call, labels, n.stud)
+    if (!is.numeric(rm.r) || rm.r < -1 || rm.r > 1) {
+        .stop(call, "Incorrect rm.r")
+    }
     for (i in 1:n.stud) {
         if ((is.na(t[i]) && is.na(alpha[i])) || is.na(n1[i]) || 
             is.na(n2[i])) {
@@ -1243,6 +1377,54 @@ function (call, message)
     cat("\n")
     print(call)
     stop(paste0(message, "\n "), call. = FALSE)
+}
+subset.meta.nsue <-
+function (x, subset, maxiter = 200, tol = 1e-06, ...) 
+{
+    call <- match.call()
+    if (!inherits(x, "meta.nsue")) {
+        .stop(call, "The argument must be a 'meta.nsue' object")
+    }
+    if (!is.logical(subset)) {
+        .stop(call, "subset must be logical")
+    }
+    n.stud <- x$known$n.stud + x$unknown$n.stud
+    measure <- x$measure
+    indexs <- rep(NA, n.stud)
+    indexs[subset] <- 1:sum(subset)
+    selected <- which(subset[x$known$i])
+    x$known$n.stud <- length(selected)
+    x$known$i <- indexs[x$known$i[selected]]
+    x$known$y <- x$known$y[selected]
+    selected <- which(subset[x$unknown$i])
+    if (length(selected)) {
+        x$unknown$n.stud <- length(selected)
+        x$unknown$i <- indexs[x$unknown$i[selected]]
+        x$unknown$y <- matrix(c(x$unknown$y[selected, ]), length(selected))
+    }
+    else {
+        x$unknown$n.stud <- 0
+        x$unknown$i <- c()
+        x$unknown$y <- NULL
+    }
+    selected <- which(subset)
+    x$labels <- x$labels[selected]
+    rm.M <- x$rm$M[, selected]
+    x$rm$M <- rm.M[which(apply(rm.M, 1, sum) > 0), ]
+    x$rm$n.stud <- nrow(x$rm$M)
+    x$rm$weights <- x$rm$weights[selected]
+    x$model$matrix <- x$model$matrix[selected, ]
+    if (measure == "cor" || measure == "cor in smd") {
+        x$y.var <- x$y.var[selected]
+    }
+    if (measure == "smc" || measure == "smd") {
+        x$y2var_k1 <- x$y2var_k1[selected]
+        x$y2var_k2 <- x$y2var_k2[selected]
+    }
+    if (measure == "cor in smd") {
+        x$smd <- x$smd[selected, ]
+    }
+    .metalm.meta.nsue(x, maxiter, tol)
 }
 summary.leave1out.nsue <-
 function (object, ...) 
@@ -1367,6 +1549,9 @@ function (r, n, alpha = 0.05, labels = "study", rm.r = 0.3)
     n <- .check.n(call, n, 4, n.stud)
     alpha <- .check.alpha(call, alpha, n.stud)
     labels <- .check.labels(call, labels, n.stud)
+    if (!is.numeric(rm.r) || rm.r < -1 || rm.r > 1) {
+        .stop(call, "Incorrect rm.r")
+    }
     for (i in 1:n.stud) {
         if ((is.na(r[i]) && is.na(alpha[i])) || is.na(n[i])) {
             stop("Not enough information in study", labels[i])
