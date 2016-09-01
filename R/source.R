@@ -130,10 +130,7 @@ function (call, hypotheses, model)
 .check.labels <-
 function (call, labels, n.stud) 
 {
-    if (is.factor(labels)) {
-        labels <- as.character(labels)
-    }
-    else if (!is.vector(labels)) {
+    if (!is.vector(labels)) {
         .stop(call, "labels must be a vector")
     }
     if (length(labels) == 1) {
@@ -142,7 +139,7 @@ function (call, labels, n.stud)
     if (length(labels) != n.stud) {
         .stop(call, "labels has an incorrect length")
     }
-    labels
+    as.character(labels)
 }
 .check.n <-
 function (call, n, min.n, n.stud) 
@@ -252,8 +249,10 @@ function (x, ...)
     ci.upp <- y + qnorm(0.975) * y.se
     if (measure == "cor" || measure == "cor in smd") {
         y <- tanh(y)
-        y.low <- tanh(y.low)
-        y.upp <- tanh(y.upp)
+        if (x$unknown$n.stud) {
+            y.low <- tanh(y.low)
+            y.upp <- tanh(y.upp)
+        }
         ci.low <- tanh(ci.low)
         ci.upp <- tanh(ci.upp)
     }
@@ -590,17 +589,17 @@ function (x, maxiter = 100, tol = 1e-06, ...)
     unknown <- x$unknown$i
     X <- x$model$matrix
     n.coef_j <- x$model$n.coef + 1
+    y <- c()
+    y[known] <- x$known$y
     se_coef <- c()
     se_coef_var <- c()
     for (j in 1:x$unknown$n.imp) {
-        y <- c(x$known$y, x$unknown$y[, j])
+        y[unknown] <- x$unknown$y[, j]
         if (measure == "cor" || measure == "cor in smd") {
-            y.var <- c(x$known$y.var, x$unknown$y.var[, j])
+            y.var <- x$y.var
         }
         if (measure == "smc" || measure == "smd") {
-            y.var <- c(x$y2var_k1[known] + x$y2var_k2[known] * 
-                x$known$y^2, x$y2var_k1[unknown] + x$y2var_k2[unknown] * 
-                x$unknown$y[, j]^2)
+            y.var <- x$y2var_k1 + x$y2var_k2 * y^2
         }
         X_j <- cbind(X, sqrt(y.var))
         W <- diag(1/(y.var + .tau2.reml(x$heterogeneity$tau2, 
