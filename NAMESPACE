@@ -1,22 +1,13 @@
 export(
-    coef.meta.nsue,
-    fitted.meta.nsue,
-    forest, forest.meta.nsue,
-    funnel, funnel.meta.nsue,
-    leave1out, leave1out.nsue,
-    linearHypothesis, linearHypothesis.meta.nsue,
-    meta, meta.nsue,
-    metabias, metabias.meta.nsue,
-    metalm, metalm.meta.nsue,
-    plot.meta.nsue,
-    print.leave1out.nsue, print.meta.nsue, print.nsue,
+    forest,
+    funnel,
+    leave1out,
+    meta,
+    metabias,
     r_in_smd_from_t_means_and_sds1,
     r_in_smd_from_t_means_and_sds2,
-    residuals.meta.nsue,
     smc_from_t,
     smd_from_t,
-    subset.meta.nsue,
-    summary.leave1out.nsue, summary.meta.nsue,
     z_from_r
 )
 
@@ -25,21 +16,19 @@ S3method(fitted, meta.nsue)
 S3method(forest, meta.nsue)
 S3method(funnel, meta.nsue)
 S3method(leave1out, nsue)
-S3method(linearHypothesis, meta.nsue)
 S3method(meta, nsue)
 S3method(metabias, meta.nsue)
-S3method(metalm, meta.nsue)
 S3method(plot, meta.nsue)
 S3method(print, leave1out.nsue)
 S3method(print, meta.nsue)
 S3method(print, nsue)
 S3method(residuals, meta.nsue)
-S3method(subset, meta.nsue)
+S3method(subset, nsue)
 S3method(summary, leave1out.nsue)
 S3method(summary, meta.nsue)
 
 importFrom("graphics", "lines", "plot", "plot.new", "plot.window",
     "polygon", "strwidth", "text")
-importFrom("stats", "as.formula", "cov", "dnorm", "model.matrix",
-    "optim", "pchisq", "pf", "pnorm", "qf", "qnorm", "qt", "quantile",
-    "rnorm", "runif", "symnum", "var")
+importFrom("stats", "as.formula", "cov", "dnorm", "lm.wfit",
+    "model.matrix", "optim", "optimize", "pchisq", "pf", "pnorm", "qf",
+    "qnorm", "qt", "quantile", "rnorm", "runif", "symnum", "var")

@@ -1,3 +1,13 @@
+metansue v2.0 (Release date: 2017-07-21)
+========================================
+
+Changes:
+
+* Several improvements in robustness. These changes imply that "data" argument is no longer required, that a single hypothesis can be specified in "meta", and that the following functions for "meta.nsue" objects have been removed: "linearHypothesis", "metalm" and "subset".
+* Added "subset" function for "nsue" objects.
+* Default number of imputations has been increased to 500.
+
+
 metansue v1.2 (Release date: 2016-08-31)
 ========================================
 
@@ -11,7 +21,7 @@ metansue v1.1 (Release date: 2016-06-20)
 
 Changes:
 
-* Added r_in_smd_from_t_means_and_sds and subset functions.
+* Added "r_in_smd_from_t_means_and_sds" and "subset" functions.
 
 
 metansue v1.0 (Release date: 2015-11-11)
