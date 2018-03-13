@@ -554,10 +554,8 @@ function (x, model, hypothesis, maxiter, tol)
     aX <- rm.M2 %*% X
     mi.coef <- NULL
     mi.cov <- NULL
-    mi.tau2 <- c()
     mi.qe <- c()
     mi.i2 <- c()
-    mi.h2 <- c()
     for (j in 1:max(c(1, ncol(mi_y)))) {
         if (ncol(mi_y) > 0) {
             y[unknown] <- mi_y[, j]
@@ -576,30 +574,26 @@ function (x, model, hypothesis, maxiter, tol)
         mi.coef <- cbind(mi.coef, inv_XtWX %*% t(aX) %*% W %*% 
             ay)
         mi.cov <- cbind(mi.cov, c(inv_XtWX))
-        mi.tau2 <- c(mi.tau2, tau2_j)
         mi.qe <- c(mi.qe, max(0, t(ay) %*% P_fe %*% ay))
         mi.i2 <- c(mi.i2, max(0, 1 - 1/h2_j))
-        mi.h2 <- c(mi.h2, h2_j)
     }
     coef <- apply(mi.coef, 1, mean)
     cov <- .pool.cov(mi.coef, mi.cov)
-    tau2 = mean(mi.tau2)
     f_df2 <- .pool.chi2(mi.qe, df)
     f <- f_df2[1]
     df2 <- f_df2[2]
     i2 = mean(mi.i2)
-    h2 = mean(mi.h2)
     model$coef <- coef
     model$cov <- cov
     model$se <- sqrt(diag(cov))
     x$model = model
-    x$heterogeneity <- list(tau2 = tau2, h2 = h2, i2 = i2, q = data.frame(f, 
-        df1 = df, df2, p.value = 1 - pf(f, df, df2)))
-    h <- hypothesis$matrix
-    hcoef <- c(h %*% coef)
-    hcov <- h %*% cov %*% t(h)
+    x$heterogeneity <- list(i2 = i2, q = data.frame(f, df1 = df, 
+        df2, p.value = 1 - pf(f, df, df2)))
+    hyp <- hypothesis$matrix
+    hcoef <- c(hyp %*% coef)
+    hcov <- hyp %*% cov %*% t(hyp)
     hypothesis$coef <- hcoef
-    if (nrow(h) == 1) {
+    if (nrow(hyp) == 1) {
         hse <- sqrt(hcov)
         z <- hcoef/hse
         hypothesis$se <- hse
@@ -633,38 +627,34 @@ function (chi2, df1)
 .pool.cov <-
 function (x, x_cov) 
 {
-    m <- ncol(x)
-    if (m == 1) {
-        return(matrix(x_cov, nrow(x)))
+    n.coef <- nrow(x)
+    n.imp <- ncol(x)
+    if (n.imp == 1) {
+        return(matrix(x_cov, n.coef))
     }
-    cov0 <- matrix(apply(x_cov, 1, mean), nrow(x))
-    var0 <- diag(cov0)
-    var.increase <- sqrt((var0 + (1 + 1/m) * apply(x, 1, var))/var0)
-    var.increase %*% t(var.increase) * cov0
+    matrix(apply(x_cov, 1, mean), n.coef) + (1 + 1/n.imp) * cov(t(x))
 }
 .pool.var <-
 function (x, x_var) 
 {
     if (is.vector(x)) {
-        m <- length(x)
-        if (m == 1) {
+        n.imp <- length(x)
+        if (n.imp == 1) {
             return(x_var)
         }
-        return(mean(x_var) + (1 + 1/length(x)) * var(x))
+        return(mean(x_var) + (1 + 1/n.imp) * var(x))
     }
-    m <- ncol(x)
-    if (m == 1) {
+    n.imp <- ncol(x)
+    if (n.imp == 1) {
         return(x_var)
     }
-    apply(x_var, 1, mean) + (1 + 1/ncol(x)) * apply(x, 1, var)
+    apply(x_var, 1, mean) + (1 + 1/n.imp) * apply(x, 1, var)
 }
 .print.heterogeneity <-
 function (x) 
 {
-    cat("Residual heterogeneity (tau^2):", .format.4pos(x$heterogeneity$tau2), 
-        "  I^2:", paste(.format.perc2(x$heterogeneity$i2), "%", 
-            sep = ""), "  H^2:", .format.2pos(x$heterogeneity$h2), 
-        "\n")
+    cat("Residual heterogeneity:", "  I^2:", paste(.format.perc2(x$heterogeneity$i2), 
+        "%", sep = ""), "\n")
     cat("F-statistic (heterogeneity):", .format.2pos(x$heterogeneity$q$f), 
         "on", x$heterogeneity$q$df1, "and", .format.1pos(x$heterogeneity$q$df2), 
         "df  Pr(>F):", .format.prob(x$heterogeneity$q$p.value), 
@@ -1049,7 +1039,7 @@ function (x, formula = ~1, hypothesis = NULL, n.imp = 500, n.bins = 200,
         nsue_i$labels <- x$labels[-i]
         class(nsue_i) <- "nsue"
         model_i$matrix <- as.matrix(model$matrix[-i, ])
-        obj[[i]] <- list(study = x$labels[i], meta.nsue = .meta.nsue(nsue_i, 
+        obj[[i]] <- list(study = x$labels[i], meta = .meta.nsue(nsue_i, 
             model_i, hypothesis, n.imp, n.bins, maxiter, tol))
     }
     class(obj) <- "leave1out.nsue"
@@ -1140,9 +1130,8 @@ function (x, ...)
     }
     cat("\n")
     cat("Meta-analysis description:\n")
-    cat("- Measure:", .format.measure(x[[1]]$meta.nsue$measure), 
-        "\n")
-    cat("- Model: measure", x[[1]]$meta.nsue$model$formula, "\n")
+    cat("- Measure:", .format.measure(x[[1]]$meta$measure), "\n")
+    cat("- Model: measure", x[[1]]$meta$model$formula, "\n")
     cat("- Hypothesis: ", paste(x$hypothesis$text, collapse = " & "), 
         "\n")
     cat("\n")
@@ -1150,11 +1139,11 @@ function (x, ...)
         cat("\n")
         cat("Discarded study:", x[[i]]$study, "\n")
         cat("\n")
-        .print.heterogeneity(x[[i]]$meta.nsue)
+        .print.heterogeneity(x[[i]]$meta)
         cat("\n")
-        .print.model(x[[i]]$meta.nsue)
+        .print.model(x[[i]]$meta)
         cat("\n")
-        .print.hypothesis(x[[i]]$meta.nsue)
+        .print.hypothesis(x[[i]]$meta)
         cat("\n")
     }
     .print.sign()
@@ -1302,7 +1291,7 @@ function (x, formula = ~1, hypothesis = NULL, maxiter = 200,
         .stop(call, "The argument must be a 'meta.nsue' or 'leave1out.nsue' object")
     }
     if (is_leave1out) {
-        n.stud = length(x[[1]]$meta.nsue$known$i) + length(x[[1]]$meta.nsue$unknown$i)
+        n.stud = length(x[[1]]$meta$known$i) + length(x[[1]]$meta$unknown$i)
     }
     else {
         n.stud = length(x$known$i) + length(x$unknown$i)
@@ -1311,7 +1300,7 @@ function (x, formula = ~1, hypothesis = NULL, maxiter = 200,
     hypothesis <- .check.hypothesis(call, hypothesis, model)
     if (is_leave1out) {
         for (i in 1:length(x)) {
-            x[[i]]$meta.nsue = .r_in_smd_from_t_means_and_sds2(x[[i]]$meta.nsue, 
+            x[[i]]$meta = .r_in_smd_from_t_means_and_sds2(x[[i]]$meta, 
                 model, hypothesis, maxiter, tol)
         }
         return(x)
@@ -1446,12 +1435,12 @@ function (object, ...)
         .stop(match.call(), "The argument must be a 'leave1out.nsue' object")
     }
     cat("\n")
-    cat("Meta-analysis model:", object[[1]]$meta.nsue$measure, 
-        object[[1]]$meta.nsue$model$formula, "\n")
+    cat("Meta-analysis model:", object[[1]]$meta$measure, object[[1]]$meta$model$formula, 
+        "\n")
     cat("\n")
     for (i in 1:length(object)) {
         cat("Discarded study:", object[[i]]$study, "\n")
-        .print.hypothesis(object[[i]]$meta.nsue)
+        .print.hypothesis(object[[i]]$meta)
         cat("\n")
     }
     .print.sign()

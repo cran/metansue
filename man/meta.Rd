@@ -41,7 +41,7 @@ Each hypothesis must be a matrix (or vector) giving linear combinations of coeff
   \item{y2var_k2}{a constant needed to derive the variances.}
   \item{labels}{the labels of the studies.}
   \item{rm}{a list with the expected correlation between repeated-measures studies, a conversion matrix and the study weights.}
-  \item{heterogeneity}{a list with \eqn{\tau^2}, \eqn{H^2}, \eqn{I^2} and Q test.}
+  \item{heterogeneity}{a list with \eqn{I^2} and Q test.}
   \item{model}{a list with the formula, matrix and coefficients of the model.}
   \item{hypothesis}{the matrixs and coefficients of the hypothesis.}
 

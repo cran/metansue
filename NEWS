@@ -1,3 +1,11 @@
+metansue v2.1 (Release date: 2018-03-13)
+========================================
+
+Changes:
+
+* Improved calculation of the pooled covariance matrix.
+
+
 metansue v2.0 (Release date: 2017-07-21)
 ========================================
 
