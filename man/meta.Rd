@@ -12,20 +12,19 @@
 \usage{
 meta(x, ...)
 
-\method{meta}{nsue}(x, formula = ~1, hypothesis = NULL,
-    n.imp = 500, n.bins = 200, maxiter = 200, tol = 1e-06, ...)
+\method{meta}{nsue}(x, formula = ~1, hypothesis = NULL, 
+    n.imp = 500, maxiter = 200, tol = 1e-06, ...)
 }
 \arguments{
   \item{x}{an object of class \code{"nsue"}.}
   \item{formula}{an object of class \code{"formula"}: a symbolic description of the model to be fitted.}
   \item{hypothesis}{a hypothesis, or NULL to test the main coefficient of the model.}
   \item{n.imp}{number of imputations of NSUEs.}
-  \item{n.bins}{number of bins used in the imputations.}
   \item{maxiter}{maximum number of iterations in the REML estimation of \eqn{\tau^2}.}
   \item{tol}{tolerance in the REML estimation of \eqn{\tau^2}.}
   \item{...}{other arguments (currently ignored).}
 }
-\details{Use \code{\link{smc_from_t}}, \code{\link[=smc_from_t]{smd_from_t}}, \code{\link[=smc_from_t]{z_from_r}} or \code{\link[=smc_from_t]{r_in_smd_from_t_means_and_sds1}} to create \code{"nsue"} objects.
+\details{Use \code{\link{nsue}}, \code{\link[=nsue]{smc_from_t}}, \code{\link[=nsue]{smd_from_t}} or \code{\link[=nsue]{zcor_from_r}} to create objects of class \code{"nsue"}.
 
 Models for \code{meta} and \code{\link{leave1out}} are specified symbolically. The \code{formula} is a series of terms which specify a linear predictor for \code{x}. A formula specification of the form \code{first + second} indicates a multiple regression by \code{first} and \code{second}.  A specification of the form \code{first:second} indicates the interaction of \code{first} with \code{second}. The specification \code{first*second} is the same as \code{first + second + first:second}.
 
@@ -33,16 +32,16 @@ Each hypothesis must be a matrix (or vector) giving linear combinations of coeff
 \value{
  \code{meta} returns an object of class \code{"meta.nsue"}, which is a list containing the following components:
 
-  \item{measure}{the effect-size measure used.}
+  \item{aux}{information required for \code{y2var}, \code{mi} and / or \code{backtransf}.}
+  \item{y2var}{a function to derive the variances of the effect sizes.}
+  \item{mi}{a function to multiply impute effect sizes.}
+  \item{backtransf}{a function to back-transform the effect sizes.}
+  \item{measure}{a description of the effect-size measure used.}
+  \item{labels}{the labels of the studies.}
   \item{known}{a list with the known effect sizes and their indexs.}
   \item{unknown}{a list with the imputations of NSUEs and their indexs.}
-  \item{y.var}{the variances if the effect sizes.}
-  \item{y2var_k1}{a constant needed to derive the variances.}
-  \item{y2var_k2}{a constant needed to derive the variances.}
-  \item{labels}{the labels of the studies.}
-  \item{rm}{a list with the expected correlation between repeated-measures studies, a conversion matrix and the study weights.}
-  \item{heterogeneity}{a list with \eqn{I^2} and Q test.}
   \item{model}{a list with the formula, matrix and coefficients of the model.}
+  \item{heterogeneity}{a list with \eqn{\tau^2}, \eqn{H^2}, \eqn{I^2} and Q test.}
   \item{hypothesis}{the matrixs and coefficients of the hypothesis.}
 
   The functions \code{print} and \code{summary} may be used to print the details or a summary of the results. The generic accessor functions \code{coefficients}, \code{fitted.values} and \code{residuals} extract various useful features of the value returned by \code{meta}.
@@ -54,7 +53,7 @@ Each hypothesis must be a matrix (or vector) giving linear combinations of coeff
 }
 \author{Joaquim Radua}
 \seealso{
-  \code{\link{smc_from_t}}, \code{\link[=smc_from_t]{smd_from_t}}, \code{\link[=smc_from_t]{z_from_r}} and \code{\link[=smc_from_t]{r_in_smd_from_t_means_and_sds1}} for creating \code{"nsue"} objects.
+  \code{\link{nsue}}, \code{\link[=nsue]{smc_from_t}}, \code{\link[=nsue]{smd_from_t}} and \code{\link[=nsue]{zcor_from_r}} for creating objects of class \code{"nsue"}.
 
   \code{\link{forest}} for plotting forest plots.
 

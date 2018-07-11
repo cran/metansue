@@ -1,3 +1,13 @@
+.backtransf_identity <-
+function (aux, y) 
+{
+    y
+}
+.backtransf_tanh <-
+function (aux, y) 
+{
+    tanh(y)
+}
 .check.alpha <-
 function (call, alpha, n.stud) 
 {
@@ -5,10 +15,10 @@ function (call, alpha, n.stud)
         .stop(call, "alpha must be a numeric vector")
     }
     if (any(is.na(alpha))) {
-        .stop(call, "alpha cannot have missing values")
+        .stop(call, "alpha must have no missing values")
     }
     if (any(alpha <= 0) || any(alpha >= 1)) {
-        .stop(call, "alpha cannot be <= 0 or >= 1")
+        .stop(call, "alpha values must be between 0 and 1")
     }
     if (length(alpha) == 1) {
         return(rep(alpha, n.stud))
@@ -43,7 +53,7 @@ function (call, formula, n.stud)
         .stop(call, "Independent variables of the formula have an incorrect length")
     }
     if (any(is.na(X))) {
-        .stop(call, "Independent variables of the formula cannot have missing values. Impute missing values (using for example the R package 'mi'), call 'meta' for each imputation, and combine all imputations")
+        .stop(call, "Independent variables of the formula must have no missing values. Impute missing values (using for example the R package 'mi'), call 'meta' for each imputation, and combine all imputations")
     }
     list(formula = formula, matrix = matrix(c(X), n.stud), labels = colnames(X))
 }
@@ -88,9 +98,6 @@ function (call, hypothesis, model)
             }
             text = c(text, paste(text_i, "=0", sep = ""))
         }
-        if (nrow(hypothesis) > 1) {
-            warning("All rows of the hypothesis are given the same weight in the MLE step; please adjust if required.")
-        }
         hypothesis = list(text = text, matrix = hypothesis)
     }
     else if (is.numeric(hypothesis)) {
@@ -121,31 +128,11 @@ function (call, hypothesis, model)
     }
     hypothesis
 }
-.check.labels <-
-function (call, labels, n.stud) 
-{
-    if (!is.vector(labels) && !is.factor(labels)) {
-        .stop(call, "labels must be a vector")
-    }
-    if (length(labels) == 1) {
-        return(paste0(labels, 1:n.stud))
-    }
-    if (length(labels) != n.stud) {
-        .stop(call, "labels has an incorrect length")
-    }
-    as.character(labels)
-}
 .check.n <-
 function (call, n, min.n, n.stud) 
 {
-    if (!is.numeric(n)) {
-        .stop(call, "n must be a numeric vector")
-    }
-    if (any(is.na(n))) {
-        .stop(call, "n cannot have missing values")
-    }
-    if (any(n < min.n)) {
-        .stop(call, paste("n cannot be <", min.n))
+    if (!is.numeric(n) || any(n < min.n) || any(is.na(n))) {
+        .stop(call, "n must be a numeric vector wit hvalues > min.n and no missing values")
     }
     if (length(n) == 1) {
         return(rep(n, n.stud))
@@ -164,18 +151,6 @@ function (x)
     j[na.j] <- 1 - 3/(4 * x[na.j] - 1)
     j
 }
-.elliptic.q <-
-function (x, y, p = 0.95, col = "#cccccc", segments = 51) 
-{
-    center <- c(mean(x), mean(y))
-    shape <- cov(cbind(x, y))
-    radius <- sqrt(2 * qf(p, 2, length(x) - 1))
-    angles <- (0:segments) * 2 * pi/segments
-    circle <- cbind(cos(angles), sin(angles))
-    choleski <- chol(shape, pivot = TRUE)
-    polygon(t(center + radius * t(circle %*% choleski[, order(attr(choleski, 
-        "pivot"))])), col = col, border = NA)
-}
 .estimate_n.mle_discard <-
 function (N) 
 {
@@ -190,11 +165,6 @@ function (N)
 function (x) 
 {
     formatC(x, 0, width = 2, format = "f")
-}
-.format.1 <-
-function (x) 
-{
-    formatC(x, 1, width = 4, format = "f")
 }
 .format.1pos <-
 function (x) 
@@ -211,11 +181,6 @@ function (x)
 {
     formatC(x, 2, width = 4, format = "f")
 }
-.format.3 <-
-function (x) 
-{
-    formatC(x, 3, width = 6, format = "f")
-}
 .format.4 <-
 function (x) 
 {
@@ -225,12 +190,6 @@ function (x)
 function (x) 
 {
     formatC(x, 4, width = 6, format = "f")
-}
-.format.measure <-
-function (measure) 
-{
-    switch(measure, cor = "correlation", `cor in smd` = "correlation in standardized mean difference", 
-        smc = "standardized mean change", smd = "standardized mean difference")
 }
 .format.perc2 <-
 function (x) 
@@ -251,165 +210,26 @@ function (p)
         "**", "*", ".", " "), na = FALSE, corr = FALSE)
 }
 .meta.nsue <-
-function (x, model, hypothesis, n.imp, n.bins, maxiter, tol) 
+function (x, model, hypothesis, n.imp, maxiter, tol) 
 {
-    measure <- x$measure
     y <- x$y
-    x$y = NULL
     y_lo = x$y_lo
-    x$y_lo = NULL
     y_up = x$y_up
+    x$y = NULL
+    x$y_lo = NULL
     x$y_up = NULL
     n.stud <- length(y)
     known <- which(!is.na(y) | y_up - y_lo < 1e-06)
     unknown <- setdiff(1:n.stud, known)
     y[is.na(y)] = (y_up[is.na(y)] + y_lo[is.na(y)])/2
-    if (measure == "cor" || measure == "cor in smd") {
-        y.var = x$y.var
-        y_lo.var = y.var
-        y_up.var = y.var
-    }
-    if (measure == "smc" || measure == "smd") {
-        y2var_k1 <- x$y2var_k1
-        y2var_k2 <- x$y2var_k2
-        y.var = y2var_k1 + y2var_k2 * y^2
-        y_lo.var = y2var_k1 + y2var_k2 * y_lo^2
-        y_up.var = y2var_k1 + y2var_k2 * y_up^2
-    }
+    aux <- x$aux
+    y2var = x$y2var
+    y.var = y2var(aux, y)
+    y_lo.var = y2var(aux, y_lo)
+    y_up.var = y2var(aux, y_up)
     X = model$matrix
     n.coef = ncol(X)
-    if (length(unknown)) {
-        if (measure == "cor" || measure == "cor in smd") {
-            mll_coef <- function(coef, known, known.y, known.y.var, 
-                known.weights, unknown, unknown.y_lo, unknown.y_lo.se, 
-                unknown.y_up, unknown.y_up.se, unknown.weights, 
-                X) {
-                mu <- X %*% coef
-                unknown.mu <- mu[unknown]
-                a = pnorm((unknown.y_up - unknown.mu)/unknown.y_up.se, 
-                  log.p = TRUE)
-                c = pnorm((unknown.y_lo - unknown.mu)/unknown.y_up.se, 
-                  log.p = TRUE)
-                sum(known.weights * (log(known.y.var) + (known.y - 
-                  mu[known])^2/known.y.var))/2 - sum(unknown.weights * 
-                  (a + log(-expm1(c - a))))
-            }
-            mll_tau2 <- function(tau2, known.err2, known.y.var, 
-                known.weights, unknown.err_lo, unknown.y_lo.var, 
-                unknown.err_up, unknown.y_up.var, unknown.weights) {
-                if (tau2 < 0) {
-                  return(Inf)
-                }
-                known.sigma2 <- known.y.var + tau2
-                a = pnorm(unknown.err_up/sqrt(unknown.y_up.var + 
-                  tau2), log.p = TRUE)
-                c = pnorm(unknown.err_lo/sqrt(unknown.y_lo.var + 
-                  tau2), log.p = TRUE)
-                sum(known.weights * (log(known.sigma2) + known.err2/known.sigma2))/2 - 
-                  sum(unknown.weights * (a + log(-expm1(c - a))))
-            }
-            mi1 <- function(tau2, mu, y_lo, y_up, y.var, rm.var, 
-                rm.y, n.imp) {
-                sigma2 <- y.var + tau2
-                sigma <- sqrt(sigma2)
-                if (length(rm.var)) {
-                  rm.sigma <- sqrt(rm.var + tau2)
-                  Sxx <- rm.sigma %*% t(rm.sigma) * (diag(1 - 
-                    rm$r, length(rm.var)) + rm$r)
-                  Sxy <- rm.sigma * sigma * rm$r
-                  beta <- solve(Sxx) %*% Sxy
-                  mus <- rm.y %*% beta
-                  sigma <- sqrt(sigma2 - t(beta) %*% Sxx %*% 
-                    beta)
-                }
-                else {
-                  mus <- rep(mu, n.imp)
-                }
-                q <- rep(NA, n.imp)
-                to_imp <- 1:n.imp
-                while (length(to_imp)) {
-                  q[to_imp] <- rnorm(length(to_imp), mus[to_imp], 
-                    sigma)
-                  to_imp <- which(q <= y_lo & q >= y_up)
-                }
-                q
-            }
-        }
-        if (measure == "smc" || measure == "smd") {
-            mll_coef <- function(coef, known, known.y, known.y.var, 
-                known.weights, unknown, unknown.y_lo, unknown.y_lo.se, 
-                unknown.y_up, unknown.y_up.se, unknown.weights, 
-                X) {
-                mu <- X %*% coef
-                unknown.mu <- mu[unknown]
-                a = pnorm((unknown.y_up - unknown.mu)/unknown.y_up.se, 
-                  log.p = TRUE)
-                c = pnorm((unknown.y_lo - unknown.mu)/unknown.y_lo.se, 
-                  log.p = TRUE)
-                sum(known.weights * (log(known.y.var) + (known.y - 
-                  mu[known])^2/known.y.var))/2 - sum(unknown.weights * 
-                  (a + log(-expm1(c - a))))
-            }
-            mll_tau2 <- function(tau2, known.err2, known.y.var, 
-                known.weights, unknown.err_lo, unknown.y_lo.var, 
-                unknown.err_up, unknown.y_up.var, unknown.weights) {
-                if (tau2 < 0) {
-                  return(Inf)
-                }
-                known.sigma2 <- known.y.var + tau2
-                a = pnorm(unknown.err_up/sqrt(unknown.y_up.var + 
-                  tau2), log.p = TRUE)
-                c = pnorm(unknown.err_lo/sqrt(unknown.y_lo.var + 
-                  tau2), log.p = TRUE)
-                sum(known.weights * (log(known.sigma2) + known.err2/known.sigma2))/2 - 
-                  sum(unknown.weights * (a + log(-expm1(c - a))))
-            }
-            mi2 <- function(tau2, mu, y_lo, y_up, y2var_k1, y2var_k2, 
-                rm.var_k1, rm.var_k2, rm.y, n.imp, n.bins) {
-                sigma2 <- y2var_k1 + y2var_k2 * mu^2 + tau2
-                sigma <- sqrt(sigma2)
-                if (length(rm.var_k1)) {
-                  rm.sigma <- sqrt(rm.var_k1 + rm.var_k2 * mu^2 + 
-                    tau2)
-                  Sxx <- rm.sigma %*% t(rm.sigma) * (diag(1 - 
-                    rm$r, length(rm.var_k1)) + rm$r)
-                  Sxy <- rm.sigma * sigma * rm$r
-                  beta <- solve(Sxx) %*% Sxy
-                  mus <- rm.y %*% beta
-                  sigma <- sqrt(sigma2 - t(beta) %*% Sxx %*% 
-                    beta)
-                }
-                else {
-                  mus <- rep(mu, n.imp)
-                }
-                width <- (y_up - y_lo)/n.bins
-                y <- sample(seq(y_lo + width/2, y_up - width/2, 
-                  width))
-                q <- c()
-                for (imp in 1:n.imp) {
-                  raw_dens <- dnorm(y, mus[imp], sigma) * (y2var_k1 + 
-                    y2var_k2 * y^2 + tau2)
-                  pfun <- cumsum(raw_dens/sum(raw_dens))
-                  p <- runif(1)
-                  j <- 1
-                  while (p > pfun[j]) {
-                    j <- j + 1
-                  }
-                  q <- c(q, y[j])
-                }
-                q
-            }
-        }
-    }
-    rm <- x$rm
-    rm.M <- t(unname(model.matrix(~0 + x$labels)))
-    rm.M <- rm.M[unique(c(1:nrow(rm.M) %*% rm.M)), ]
-    rm_weights = apply(apply(rm.M, 1, function(x) {
-        x/(1 + (sum(x) - 1) * rm$r)
-    }), 1, sum)
-    rm$M <- rm.M
-    rm$weights <- rm_weights
-    x$rm = rm
+    df <- nrow(X) - n.coef
     if (length(unknown)) {
         coef = NULL
         n.mle_discard = .estimate_n.mle_discard(n.stud)
@@ -423,29 +243,19 @@ function (x, model, hypothesis, n.imp, n.bins, maxiter, tol)
                 if (n.coef == 1) {
                   interval = c(min(c(y[known_i], y_lo[unknown_i])), 
                     max(c(y[known_i], y_up[unknown_i])))
-                  coef_i <- optimize(mll_coef, interval, known_i, 
-                    y[known_i], y.var[known_i], rm_weights[known_i], 
-                    unknown_i, y_lo[unknown_i], sqrt(y_lo.var[unknown_i]), 
-                    y_up[unknown_i], sqrt(y_up.var[unknown_i]), 
-                    rm_weights[unknown_i], X)$minimum
+                  coef_i <- optimize(.mll_coef, interval, known_i, 
+                    y[known_i], y.var[known_i], unknown_i, y_lo[unknown_i], 
+                    sqrt(y_lo.var[unknown_i]), y_up[unknown_i], 
+                    sqrt(y_up.var[unknown_i]), X)$minimum
                 }
                 else {
                   initial_coef <- coef(lm.wfit(X[sample_i, ], 
                     y[sample_i], 1/y.var[sample_i]))
-                  if (measure == "cor" || measure == "cor in smd") {
-                    coef_i <- optim(initial_coef, mll_coef, gr = NULL, 
-                      known_i, y[known_i], y.var[known_i], rm_weights[known_i], 
-                      unknown_i, y_lo[unknown_i], sqrt(y_lo.var[unknown_i]), 
-                      y_up[unknown_i], sqrt(y_up.var[unknown_i]), 
-                      rm_weights[unknown_i], X)$par
-                  }
-                  if (measure == "smc" || measure == "smd") {
-                    coef_i <- optim(initial_coef, mll_coef, gr = NULL, 
-                      known_i, y[known_i], y.var[known_i], rm_weights[known_i], 
-                      unknown_i, y_lo[unknown_i], sqrt(y_lo.var[unknown_i]), 
-                      y_up[unknown_i], sqrt(y_up.var[unknown_i]), 
-                      rm_weights[unknown_i], X)$par
-                  }
+                  coef_i <- optim(initial_coef, .mll_coef, gr = NULL, 
+                    known_i, y[known_i], y.var[known_i], unknown_i, 
+                    y_lo[unknown_i], sqrt(y_lo.var[unknown_i]), 
+                    y_up[unknown_i], sqrt(y_up.var[unknown_i]), 
+                    X)$par
                 }
                 hyp_i = sum(abs(hypothesis$matrix %*% coef_i))
                 if (hyp_i < abs(min_hyp)) {
@@ -457,169 +267,167 @@ function (x, model, hypothesis, n.imp, n.bins, maxiter, tol)
             mle_discard = c(mle_discard, min_i)
         }
         mu = X %*% min_coef
-        tau2 <- optimize(mll_tau2, c(0, 999), (y[known] - mu[known])^2, 
-            y.var[known], rm_weights[known], y_lo[unknown] - 
-                mu[unknown], y_lo.var[unknown], y_up[unknown] - 
-                mu[unknown], y_up.var[unknown], rm_weights[unknown])$minimum
-        mi_y <- NULL
+        tau2 <- optimize(.mll_tau2, c(0, 999), (y[known] - mu[known])^2, 
+            y.var[known], y_lo[unknown] - mu[unknown], y_lo.var[unknown], 
+            y_up[unknown] - mu[unknown], y_up.var[unknown])$minimum
+        mi.y <- NULL
         for (i in unknown) {
-            rm.indexs <- which(x$labels == x$labels[i] & 1:n.stud < 
-                i)
-            if (measure == "cor" || measure == "cor in smd") {
-                rm.var <- c()
-            }
-            if (measure == "smc" || measure == "smd") {
-                rm.var_k1 <- c()
-                rm.var_k2 <- c()
-            }
-            rm.y = NULL
-            for (j in rm.indexs) {
-                is.known = !is.na(y[j])
-                if (measure == "cor" || measure == "cor in smd") {
-                  rm.var <- c(rm.var, y.var[j])
-                }
-                if (measure == "smc" || measure == "smd") {
-                  rm.var_k1 <- c(rm.var_k1, y2var_k1[j])
-                  rm.var_k2 <- c(rm.var_k2, y2var_k2[j])
-                }
-                if (is.known) {
-                  rm.y <- cbind(rm.y, rep(y[j], n.imp))
-                }
-                else {
-                  rm.y <- cbind(rm.y, mi_y[match(j, unknown), 
-                    ])
-                }
-            }
-            if (measure == "cor" || measure == "cor in smd") {
-                mi_y <- rbind(mi_y, mi1(tau2, mu[i], y_lo[i], 
-                  y_up[i], y.var[i], rm.var, rm.y, n.imp))
-            }
-            if (measure == "smc" || measure == "smd") {
-                mi_y <- rbind(mi_y, mi2(tau2, mu[i], y_lo[i], 
-                  y_up[i], y2var_k1[i], y2var_k2[i], rm.var_k1, 
-                  rm.var_k2, rm.y, n.imp, n.bins))
-            }
+            mi.y <- rbind(mi.y, x$mi(aux, mu[i], tau2, y_lo[i], 
+                y_up[i], y2var, i, n.imp))
         }
-        colnames(mi_y) <- NULL
+        colnames(mi.y) <- NULL
     }
     else {
-        mi_y = matrix(nrow = 0, ncol = 0)
+        mi.y = matrix(nrow = 0, ncol = 0)
     }
     x$known = list(i = known, y = y[known])
-    x$unknown = list(i = unknown, y = mi_y)
-    class(x) <- "meta.nsue"
-    .meta.nsue2(x, model, hypothesis, maxiter, tol)
-}
-.meta.nsue2 <-
-function (x, model, hypothesis, maxiter, tol) 
-{
-    measure = x$measure
-    known = x$known$i
-    unknown = x$unknown$i
-    y = rep(NA, length(known) + length(unknown))
-    y[known] = x$known$y
-    mi_y = x$unknown$y
-    if (measure == "cor" || measure == "cor in smd") {
-        y.var = x$y.var
-    }
-    if (measure == "smc" || measure == "smd") {
-        y2var_k1 <- x$y2var_k1
-        y2var_k2 <- x$y2var_k2
-    }
-    rm = x$rm
-    rm.M = rm$M
-    rm_weights = rm$weights
-    X = model$matrix
-    n.coef = ncol(X)
-    df <- nrow(rm.M) - n.coef
-    rm.M2 <- t(apply(rm.M, 1, function(x) {
-        x/sum(x)
-    }))
-    if (measure == "cor" || measure == "cor in smd") {
-        y.var <- y.var/rm_weights
-        ay.var <- apply(rm.M, 1, function(xx) {
-            mean(y.var[which(xx == 1)])/sum(xx)
-        })
-    }
-    if (measure == "smc" || measure == "smd") {
-        y2var_k1 <- y2var_k1/rm_weights
-        ay2var_k1 <- apply(rm.M, 1, function(xx) {
-            mean(y2var_k1[which(xx == 1)])/sum(xx)
-        })
-        y2var_k2 <- y2var_k2
-        ay2var_k2 <- apply(rm.M, 1, function(xx) {
-            mean(y2var_k2[which(xx == 1)])
-        })
-    }
-    aX <- rm.M2 %*% X
+    x$unknown = list(i = unknown, y = mi.y)
+    hyp <- hypothesis$matrix
     mi.coef <- NULL
     mi.cov <- NULL
+    mi.tau <- c()
+    mi.i <- c()
     mi.qe <- c()
-    mi.i2 <- c()
-    for (j in 1:max(c(1, ncol(mi_y)))) {
-        if (ncol(mi_y) > 0) {
-            y[unknown] <- mi_y[, j]
+    for (j in 1:max(c(1, ncol(mi.y)))) {
+        if (ncol(mi.y) > 0) {
+            y[unknown] <- mi.y[, j]
+            y.var[unknown] <- y2var(aux, mi.y[, j], unknown)
         }
-        ay <- c(rm.M2 %*% y)
-        if (measure == "smc" || measure == "smd") {
-            ay.var <- ay2var_k1 + ay2var_k2 * ay^2
-        }
-        W_fe <- diag(1/ay.var)
-        P_fe <- W_fe - W_fe %*% aX %*% solve(t(aX) %*% W_fe %*% 
-            aX) %*% t(aX) %*% W_fe
-        tau2_j <- .tau2.reml(ay, ay.var, aX, maxiter, tol)
-        W <- diag(1/(ay.var + tau2_j))
-        inv_XtWX <- solve(t(aX) %*% W %*% aX)
-        h2_j <- 1 + tau2_j/df * sum(diag(P_fe))
-        mi.coef <- cbind(mi.coef, inv_XtWX %*% t(aX) %*% W %*% 
-            ay)
-        mi.cov <- cbind(mi.cov, c(inv_XtWX))
-        mi.qe <- c(mi.qe, max(0, t(ay) %*% P_fe %*% ay))
-        mi.i2 <- c(mi.i2, max(0, 1 - 1/h2_j))
+        W_fe_j <- diag(1/y.var)
+        P_fe_j <- W_fe_j - W_fe_j %*% X %*% solve(t(X) %*% W_fe_j %*% 
+            X) %*% t(X) %*% W_fe_j
+        tau2_j <- .tau2.reml(y, y.var, X, maxiter, tol)
+        W_j <- diag(1/(y.var + tau2_j))
+        cov_j <- solve(t(X) %*% W_j %*% X)
+        coef_j <- cov_j %*% t(X) %*% W_j %*% y
+        h2_j <- 1 + tau2_j/df * sum(diag(P_fe_j))
+        i2_j <- 1 - 1/h2_j
+        qe_j <- max(0, t(y) %*% P_fe_j %*% y)
+        mi.coef <- cbind(mi.coef, coef_j)
+        mi.cov <- cbind(mi.cov, c(cov_j))
+        mi.tau <- c(mi.tau, sqrt(tau2_j))
+        mi.i <- c(mi.i, sqrt(i2_j))
+        mi.qe <- c(mi.qe, qe_j)
     }
-    coef <- apply(mi.coef, 1, mean)
+    coef <- .pool(mi.coef)
     cov <- .pool.cov(mi.coef, mi.cov)
-    f_df2 <- .pool.chi2(mi.qe, df)
-    f <- f_df2[1]
-    df2 <- f_df2[2]
-    i2 = mean(mi.i2)
+    tau2 <- .pool(mi.tau)^2
+    i2 <- .pool(mi.i)^2
+    if (length(mi.qe) == 1) {
+        qe <- mi.qe
+    }
+    else {
+        f_df2 <- .pool.chi2(mi.qe, df)
+        qe <- qchisq(pf(f_df2[1], df, f_df2[2], log.p = TRUE), 
+            df, log.p = TRUE)
+    }
+    hcoef <- c(hyp %*% coef)
+    hcov <- hyp %*% cov %*% t(hyp)
+    if (nrow(hyp) == 1) {
+        hse <- sqrt(hcov)
+        hz <- hcoef/hse
+    }
+    else {
+        hqr <- qr(hcov)
+        hpivot <- hqr$pivot[1:hqr$rank]
+        hchisq <- c(t(hcoef[hpivot]) %*% solve(hcov[hpivot, hpivot]) %*% 
+            hcoef[hpivot])
+        hdf <- length(hpivot)
+    }
     model$coef <- coef
     model$cov <- cov
     model$se <- sqrt(diag(cov))
     x$model = model
-    x$heterogeneity <- list(i2 = i2, q = data.frame(f, df1 = df, 
-        df2, p.value = 1 - pf(f, df, df2)))
-    hyp <- hypothesis$matrix
-    hcoef <- c(hyp %*% coef)
-    hcov <- hyp %*% cov %*% t(hyp)
+    x$heterogeneity <- list(tau2 = tau2, h2 = 1/(1 - i2), i2 = i2, 
+        qe = qe, df = df, p.value = 1 - pchisq(qe, df))
     hypothesis$coef <- hcoef
     if (nrow(hyp) == 1) {
-        hse <- sqrt(hcov)
-        z <- hcoef/hse
         hypothesis$se <- hse
-        hypothesis$z <- z
-        hypothesis$p.value <- 2 * pnorm(-abs(z))
+        hypothesis$z <- hz
+        hypothesis$p.value <- 2 * pnorm(-abs(hz))
     }
     else {
-        qr <- qr(hcov)
-        pivot <- qr$pivot[1:qr$rank]
-        chisq <- c(t(hcoef[pivot]) %*% solve(hcov[pivot, pivot]) %*% 
-            hcoef[pivot])
-        df <- length(pivot)
-        hypothesis$chisq <- chisq
-        hypothesis$df <- df
-        hypothesis$p.value <- 1 - pchisq(chisq, df)
+        hypothesis$chisq <- hchisq
+        hypothesis$df <- hdf
+        hypothesis$p.value <- 1 - pchisq(hchisq, df)
     }
     x$hypothesis = hypothesis
+    class(x) <- "meta.nsue"
     x
+}
+.mi_g <-
+function (aux, mu, tau2, y_lo, y_up, y2var, selected, n.imp) 
+{
+    n.bins <- 500
+    mus <- rep(mu, n.imp)
+    sigma <- sqrt(y2var(aux, mu, selected) + tau2)
+    width <- (y_up - y_lo)/n.bins
+    y <- sample(seq(y_lo + width/2, y_up - width/2, width))
+    q <- c()
+    for (imp in 1:n.imp) {
+        raw_dens <- dnorm(y, mus[imp], sigma) * (y2var(aux, y, 
+            selected) + tau2)
+        pfun <- cumsum(raw_dens/sum(raw_dens))
+        p <- runif(1)
+        j <- 1
+        while (p > pfun[j]) {
+            j <- j + 1
+        }
+        q <- c(q, y[j])
+    }
+    q
+}
+.mi_z <-
+function (aux, mu, tau2, y_lo, y_up, y2var, selected, n.imp) 
+{
+    mus <- rep(mu, n.imp)
+    sigma <- sqrt(y2var(aux, mu, selected) + tau2)
+    q <- rep(NA, n.imp)
+    to_imp <- 1:n.imp
+    while (length(to_imp)) {
+        q[to_imp] <- rnorm(length(to_imp), mus[to_imp], sigma)
+        to_imp <- which(q <= y_lo & q >= y_up)
+    }
+    q
+}
+.mll_coef <-
+function (coef, known, known.y, known.y.var, unknown, unknown.y_lo, 
+    unknown.y_lo.se, unknown.y_up, unknown.y_up.se, X) 
+{
+    mu <- X %*% coef
+    unknown.mu <- mu[unknown]
+    a <- pnorm((unknown.y_up - unknown.mu)/unknown.y_up.se, log.p = TRUE)
+    c <- pnorm((unknown.y_lo - unknown.mu)/unknown.y_up.se, log.p = TRUE)
+    sum(log(known.y.var) + (known.y - mu[known])^2/known.y.var)/2 - 
+        sum(a + log(-expm1(c - a)))
+}
+.mll_tau2 <-
+function (tau2, known.err2, known.y.var, unknown.err_lo, unknown.y_lo.var, 
+    unknown.err_up, unknown.y_up.var) 
+{
+    if (tau2 < 0) {
+        return(Inf)
+    }
+    known.sigma2 <- known.y.var + tau2
+    a <- pnorm(unknown.err_up/sqrt(unknown.y_up.var + tau2), 
+        log.p = TRUE)
+    c <- pnorm(unknown.err_lo/sqrt(unknown.y_lo.var + tau2), 
+        log.p = TRUE)
+    sum(log(known.sigma2) + known.err2/known.sigma2)/2 - sum(a + 
+        log(-expm1(c - a)))
+}
+.pool <-
+function (x) 
+{
+    if (is.vector(x)) {
+        return(mean(x))
+    }
+    apply(x, 1, mean)
 }
 .pool.chi2 <-
 function (chi2, df1) 
 {
     m <- length(chi2)
-    if (m == 1) {
-        return(c(chi2/df1, Inf))
-    }
     r <- (1 + 1/m) * var(sqrt(chi2))
     c((mean(chi2)/df1 - (m + 1)/(m - 1) * r)/(1 + r), (m - 1)/df1^(3/m) * 
         (1 + 1/r)^2)
@@ -653,12 +461,14 @@ function (x, x_var)
 .print.heterogeneity <-
 function (x) 
 {
-    cat("Residual heterogeneity:", "  I^2:", paste(.format.perc2(x$heterogeneity$i2), 
-        "%", sep = ""), "\n")
-    cat("F-statistic (heterogeneity):", .format.2pos(x$heterogeneity$q$f), 
-        "on", x$heterogeneity$q$df1, "and", .format.1pos(x$heterogeneity$q$df2), 
-        "df  Pr(>F):", .format.prob(x$heterogeneity$q$p.value), 
+    cat("Residual heterogeneity:", " tau^2:", .format.4pos(x$heterogeneity$tau2), 
+        "  I^2:", paste(.format.perc2(x$heterogeneity$i2), "%", 
+            sep = ""), "  H^2:", .format.2pos(x$heterogeneity$h2), 
         "\n")
+    cat("Q-statistic:", .format.2pos(x$heterogeneity$qe), "on", 
+        x$heterogeneity$df, "df  Pr(>Q):", .format.prob(x$heterogeneity$p.value), 
+        "\n")
+    cat("Note: we strongly suggest focusing more on I^2 than on Pr(>Q)\n")
 }
 .print.hypothesis <-
 function (x) 
@@ -669,31 +479,22 @@ function (x)
     prob <- .format.prob(p.value)
     sign <- .format.sign(p.value)
     if (nrow == 1) {
-        measure <- x$measure
-        se <- x$hypothesis$se
+        se <- c(x$hypothesis$se)
         cat("One-row hypothesis:\n")
-        ci.low <- coef + qnorm(0.025) * se
-        ci.up <- coef + qnorm(0.975) * se
-        if (measure == "cor" || measure == "cor in smd") {
-            hypothesis <- cbind(cbind(.format.3(tanh(coef)), 
-                .format.4(x$hypothesis$z), prob, .format.3(tanh(cbind(ci.low, 
-                  ci.up)))), sign)
-            colnames(hypothesis) <- c("Corr", "z value", "Pr(>|z|)", 
-                "CI(low)", "CI(up)", "")
-        }
-        if (measure == "smc" || measure == "smd") {
-            hypothesis <- cbind(cbind(.format.4(coef), .format.4(x$hypothesis$z), 
-                prob, .format.4(cbind(ci.low, ci.up))), sign)
-            colnames(hypothesis) <- c("Estimate", "z value", 
-                "Pr(>|z|)", "CI(low)", "CI(up)", "")
-        }
+        hypothesis <- cbind(.format.4(x$backtransf(x$aux, coef)), 
+            .format.4(x$hypothesis$z), prob, .format.4(x$backtransf(x$aux, 
+                c(coef) + cbind(qnorm(0.025), qnorm(0.975)) * 
+                  se)), sign)
+        colnames(hypothesis) <- c("Estimate", "z value", "Pr(>|z|)", 
+            "CI(low)", "CI(up)", "")
     }
     else {
         cat("Multi-row hypothesis:\n")
-        hypothesis <- cbind(.format.4(coef), c(.format.2pos(x$hypothesis$chisq), 
-            rep("", nrow - 1)), c(.format.0pos(x$hypothesis$df), 
-            rep("", nrow - 1)), c(prob, rep("", nrow - 1)), c(sign, 
-            rep("", nrow - 1)))
+        hypothesis <- cbind(.format.4(x$backtransf(x$aux, coef)), 
+            c(.format.2pos(x$hypothesis$chisq), rep("", nrow - 
+                1)), c(.format.0pos(x$hypothesis$df), rep("", 
+                nrow - 1)), c(prob, rep("", nrow - 1)), c(sign, 
+                rep("", nrow - 1)))
         colnames(hypothesis) <- c("Estimate", "chisq", "df", 
             "Pr(>chisq)", "")
     }
@@ -714,37 +515,6 @@ function ()
 {
     cat("---\n")
     cat("Signif. codes: 0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1\n")
-}
-.r_in_smd_from_sds <-
-function (var.diff, df1, var1.sum, sd1.prod, df2, var2.sum, sd2.prod, 
-    r.min, r.max) 
-{
-    r <- (df1 * (var1.sum - var.diff) + df2 * (var2.sum - var.diff))/(2 * 
-        (df1 * sd1.prod + df2 * sd2.prod))
-    r[r < r.min] = r.min
-    r[r > r.max] = r.max
-    r
-}
-.r_in_smd_from_t_means_and_sds2 <-
-function (x, model, hypothesis, maxiter, tol) 
-{
-    x$measure <- "smd"
-    smd <- x$smd[x$known$i, ]
-    x$known$y <- smd$j * smd$diff/sqrt((smd$df1 * (smd$var1.sum - 
-        2 * smd$sd1.prod * tanh(x$known$y)) + smd$df2 * (smd$var2.sum - 
-        2 * smd$sd2.prod * tanh(x$known$y)))/(smd$df1 + smd$df2))
-    smd <- x$smd[x$unknown$i, ]
-    if (length(x$unknown$y)) {
-        x$unknown$y <- smd$j * smd$diff/sqrt((smd$df1 * (smd$var1.sum - 
-            2 * smd$sd1.prod * tanh(x$unknown$y)) + smd$df2 * 
-            (smd$var2.sum - 2 * smd$sd2.prod * tanh(x$unknown$y)))/(smd$df1 + 
-            smd$df2))
-    }
-    x$y2var_k1 = x$smd$y2var_k1
-    x$y2var_k2 = x$smd$y2var_k2
-    x$y.var <- NULL
-    x$smd <- NULL
-    .meta.nsue2(x, model, hypothesis, maxiter, tol)
 }
 .signif.up <-
 function (x, digits = 6) 
@@ -784,6 +554,27 @@ function (message)
 {
     warning(message, call. = FALSE)
 }
+.y2var_smc <-
+function (aux, y, selected = 1:length(y)) 
+{
+    1/aux$n[selected] + (1 - (aux$df[selected] - 2)/(aux$df[selected] * 
+        aux$j[selected]^2)) * y^2
+}
+.y2var_smd <-
+function (aux, y, selected = 1:length(y)) 
+{
+    1/aux$n1[selected] + 1/aux$n2[selected] + (1 - (aux$df[selected] - 
+        2)/(aux$df[selected] * aux$j[selected]^2)) * y^2
+}
+.y2var_zr <-
+function (aux, y, selected = 1:length(y)) 
+{
+    if (is.vector(y)) {
+        return(1/(aux$n[selected] - 3))
+    }
+    n.imp <- ncol(y)
+    matrix(rep(1/(aux$n[selected] - 3), n.imp), ncol = n.imp)
+}
 coef.meta.nsue <-
 function (object, ...) 
 {
@@ -797,81 +588,62 @@ function (object, ...)
     object$model$matrix %*% object$model$coef
 }
 forest <-
-function (x, ...) 
+function (x, width, ...) 
 UseMethod("forest")
 forest.meta.nsue <-
-function (x, ...) 
+function (x, width = NULL, ...) 
 {
     if (!inherits(x, "meta.nsue")) {
         .stop(match.call(), "The argument must be a 'meta.nsue' object")
     }
-    measure = x$measure
     known = x$known$i
     unknown = x$unknown$i
     unknown.n.stud <- length(unknown)
     n.stud <- length(known) + unknown.n.stud
-    if (nrow(x$rm$M) < n.stud) {
-        .warning("This plot shows repeated measures as separate studies")
-    }
     if (length(x$hypothesis$coef) > 1) {
         .warning("This plot only shows the first row of the hypothesis")
     }
     labels <- c(x$labels[unknown], x$labels[known], x$hypothesis$text[1])
     pos.y <- c(n.stud + 2 - c(unknown, known), 0)
     if (unknown.n.stud) {
-        y <- apply(x$unknown$y, 1, mean)
-        y.low <- apply(x$unknown$y, 1, function(x) {
+        y.low <- x$backtransf(x$aux, apply(x$unknown$y, 1, function(x) {
             quantile(x, 0.025)
-        })
-        y.upp <- apply(x$unknown$y, 1, function(x) {
+        }))
+        y.upp <- x$backtransf(x$aux, apply(x$unknown$y, 1, function(x) {
             quantile(x, 0.975)
-        })
-        if (measure == "cor" || measure == "cor in smd") {
-            y.se <- sqrt(x$y.var[unknown])
-        }
-        if (measure == "smc" || measure == "smd") {
-            y.se <- sqrt(.pool.var(x$unknown$y, x$y2var_k1[unknown] + 
-                x$y2var_k2[unknown] * x$unknown$y^2))
-        }
+        }))
+        y_untransf <- c(.pool(x$unknown$y), x$known$y, x$hypothesis$coef[1])
+        y.se <- c(sqrt(.pool.var(x$unknown$y, x$y2var(x$aux, 
+            x$unknown$y, unknown))), sqrt(x$y2var(x$aux, x$known$y, 
+            known)), x$hypothesis$se[1])
     }
     else {
-        y <- y.low <- y.upp <- y.se <- c()
+        y_untransf <- c(x$known$y, x$hypothesis$coef[1])
+        y.se <- c(sqrt(x$y2var(x$aux, x$known$y, known)), x$hypothesis$se[1])
     }
-    y <- c(y, x$known$y, x$hypothesis$coef[1])
-    if (measure == "cor" || measure == "cor in smd") {
-        y.se <- c(y.se, sqrt(x$y.var[known]), x$hypothesis$se[1])
-    }
-    if (measure == "smc" || measure == "smd") {
-        y.se <- c(y.se, sqrt(x$y2var_k1[known] + x$y2var_k2[known] * 
-            x$known$y^2), x$hypothesis$se[1])
-    }
-    ci.low <- y + qnorm(0.025) * y.se
-    ci.upp <- y + qnorm(0.975) * y.se
-    if (measure == "cor" || measure == "cor in smd") {
-        y <- tanh(y)
-        if (unknown.n.stud) {
-            y.low <- tanh(y.low)
-            y.upp <- tanh(y.upp)
-        }
-        ci.low <- tanh(ci.low)
-        ci.upp <- tanh(ci.upp)
-    }
+    y <- x$backtransf(x$aux, y_untransf)
+    ci.low <- x$backtransf(x$aux, y_untransf + qnorm(0.025) * 
+        y.se)
+    ci.upp <- x$backtransf(x$aux, y_untransf + qnorm(0.975) * 
+        y.se)
     lwd <- 1/y.se
     lwd <- sqrt(9 + 216 * (lwd - min(lwd))/(max(lwd) - min(lwd)))
     ci.text <- paste0(.format.2(y), " [ ", .format.2(ci.low), 
-        ", ", .format.2(ci.upp), " ] ", .format.sign(2 * pnorm(-abs(y/y.se))))
+        ", ", .format.2(ci.upp), " ] ", .format.sign(2 * pnorm(-abs(y_untransf/y.se))))
+    if (is.null(width)) {
+        width <- .signif.up(max(abs(c(quantile(ci.low, 0.1), 
+            quantile(ci.upp, 0.9)))), 1)
+    }
     plot.new()
     xlim <- c(-2.5 - max(strwidth(labels, units = "inches")), 
         max(strwidth(ci.text, units = "inches")) + 2.5)
     ylim <- c(-2, n.stud + 1)
     plot.window(xlim = xlim, ylim = ylim)
-    xthr <- .signif.up(max(abs(c(quantile(ci.low, 0.1), quantile(ci.upp, 
-        0.9)))), 1)
     lines(rep(0, 2), c(n.stud + 1.5, -1), col = "#bbbbbb", lty = 1)
     lines(c(-2, 2), rep(-1, 2), col = "#bbbbbb", lty = 1)
     for (pos.x in -2:2) {
         lines(rep(pos.x, 2), c(-1, -1.3), col = "#bbbbbb", lty = 1)
-        text(pos.x, -1.5, .format.2(pos.x/2 * xthr), pos = 1, 
+        text(pos.x, -1.5, .format.2(pos.x/2 * width), pos = 1, 
             col = "#bbbbbb")
     }
     for (i in 1:(n.stud + 1)) {
@@ -885,25 +657,25 @@ function (x, ...)
         else {
             y.low_i <- y.low[i]
             y.upp_i <- y.upp[i]
-            if (y.upp_i > -xthr && y.low_i < xthr) {
-                lines(c(max(y.low_i/xthr * 2, -2), min(y.upp_i/xthr * 
+            if (y.upp_i > -width && y.low_i < width) {
+                lines(c(max(y.low_i/width * 2, -2), min(y.upp_i/width * 
                   2, 2)), rep(pos.y_i, 2), lwd = lwd[i], col = "#dddddd")
             }
             col <- "#a7a7a7"
         }
-        if (y_i > -xthr && y_i < xthr) {
-            lines(rep(y_i/xthr * 2, 2), rep(pos.y_i, 2), lwd = lwd[i], 
+        if (y_i > -width && y_i < width) {
+            lines(rep(y_i/width * 2, 2), rep(pos.y_i, 2), lwd = lwd[i], 
                 col = col)
         }
-        if (ci.upp_i > -xthr && ci.low_i < xthr) {
-            lines(c(max(ci.low_i/xthr * 2, -2), min(ci.upp_i/xthr * 
+        if (ci.upp_i > -width && ci.low_i < width) {
+            lines(c(max(ci.low_i/width * 2, -2), min(ci.upp_i/width * 
                 2, 2)), rep(pos.y_i, 2), lend = 2, col = col)
-            if (ci.low_i > -xthr) {
-                lines(rep(ci.low_i/xthr * 2, 2), pos.y_i + c(-0.15, 
+            if (ci.low_i > -width) {
+                lines(rep(ci.low_i/width * 2, 2), pos.y_i + c(-0.15, 
                   0.15), lend = 2, col = col)
             }
-            if (ci.upp_i < xthr) {
-                lines(rep(ci.upp_i/xthr * 2, 2), pos.y_i + c(-0.15, 
+            if (ci.upp_i < width) {
+                lines(rep(ci.upp_i/width * 2, 2), pos.y_i + c(-0.15, 
                   0.15), lend = 2, col = col)
             }
         }
@@ -928,33 +700,17 @@ function (x, ...)
     if (!inherits(x, "meta.nsue")) {
         .stop(match.call(), "The argument must be a 'meta.nsue' object")
     }
-    measure = x$measure
     known <- x$known$i
     known.n.stud <- length(known)
     unknown <- x$unknown$i
     unknown.n.stud <- length(unknown)
-    if (nrow(x$rm$M) < known.n.stud + unknown.n.stud) {
-        .warning("This analysis does not take repeated measures into account")
-    }
     fitted <- fitted(x)
     known.res <- x$known$y - fitted[known]
-    if (measure == "cor" || measure == "cor in smd") {
-        known.se <- sqrt(x$y.var[known])
-    }
-    if (measure == "smc" || measure == "smd") {
-        known.se <- sqrt(x$y2var_k1[known] + x$y2var_k2[known] * 
-            x$known$y^2)
-    }
+    known.se <- sqrt(x$y2var(x$aux, x$known$y, known))
     if (unknown.n.stud) {
-        unknown.fitted <- fitted[unknown]
-        unknown.res <- apply(x$unknown$y, 1, mean) - unknown.fitted
-        if (measure == "cor" || measure == "cor in smd") {
-            unknown.se <- sqrt(x$y.var[unknown])
-        }
-        if (measure == "smc" || measure == "smd") {
-            unknown.se <- sqrt(apply(x$y2var_k1[unknown] + x$y2var_k2[unknown] * 
-                x$unknown$y^2, 1, mean))
-        }
+        n.imp <- ncol(x$unknown$y)
+        unknown.res <- x$unknown$y - fitted[unknown]
+        unknown.se <- sqrt(x$y2var(x$aux, x$unknown$y, unknown))
         max.se <- .signif.up(max(c(known.se, unknown.se)), 1)
     }
     else {
@@ -968,28 +724,19 @@ function (x, ...)
     ci.y <- c(max.se, 0, max.se)
     polygon(c(ci.x, rep(1.3 * ci, 2), rep(-1.3 * ci, 2)), c(ci.y, 
         max.se, 0, 0, max.se), col = "#fcfcfc", border = "#dddddd")
-    if (unknown.n.stud) {
-        for (i in 1:unknown.n.stud) {
-            if (measure == "cor" || measure == "cor in smd") {
-                lines(c(max(quantile(x$unknown$y[i, ] - unknown.fitted[i], 
-                  0.025), -1.3 * ci), min(quantile(x$unknown$y[i, 
-                  ] - unknown.fitted[i], 0.975), 1.3 * ci)), 
-                  rep(sqrt(x$y.var[unknown][i]), 2), lwd = 7, 
-                  col = "#dddddd")
-            }
-            if (measure == "smc" || measure == "smd") {
-                .elliptic.q(x$unknown$y[i, ] - unknown.fitted[i], 
-                  sqrt(x$y2var_k1[unknown][i] + x$y2var_k2[unknown][i] * 
-                    x$unknown$y[i, ]^2), col = "#dddddd")
-            }
-        }
-    }
     lines(ci.x, ci.y, lty = 2)
     lines(c(0, 0), c(max.se, 0), lty = 2)
-    if (unknown.n.stud) {
+    n.imp <- if (unknown.n.stud) {
         for (i in 1:unknown.n.stud) {
-            lines(rep(unknown.res[i], 2), rep(unknown.se[i], 
-                2), lwd = 7, col = "#a7a7a7")
+            for (j in round(quantile(order(unknown.res[i, ]), 
+                seq(0.01, 0.99, 0.01)))) {
+                lines(rep(unknown.res[i, j], 2), rep(unknown.se[i, 
+                  j], 2), lwd = 21, col = rgb(0, 0, 0, 0.003))
+                lines(rep(unknown.res[i, j], 2), rep(unknown.se[i, 
+                  j], 2), lwd = 14, col = rgb(0, 0, 0, 0.005))
+                lines(rep(unknown.res[i, j], 2), rep(unknown.se[i, 
+                  j], 2), lwd = 7, col = rgb(0, 0, 0, 0.01))
+            }
         }
     }
     for (i in 1:known.n.stud) {
@@ -1004,20 +751,16 @@ leave1out <-
 function (x, ...) 
 UseMethod("leave1out")
 leave1out.nsue <-
-function (x, formula = ~1, hypothesis = NULL, n.imp = 500, n.bins = 200, 
-    maxiter = 200, tol = 1e-06, ...) 
+function (x, formula = ~1, hypothesis = NULL, n.imp = 500, maxiter = 200, 
+    tol = 1e-06, ...) 
 {
     call <- match.call()
     y <- x$y
-    measure <- x$measure
     n.stud <- length(y)
     model <- .check.formula(call, formula, n.stud)
     hypothesis <- .check.hypothesis(call, hypothesis, model)
     if (n.imp < 2) {
         .stop(call, "The number of imputations must be at least 2")
-    }
-    if (length(unique(x$labels)) < n.stud) {
-        .warning("This analysis understand repeated measures as separate studies")
     }
     nsue_i <- x
     model_i <- model
@@ -1026,21 +769,12 @@ function (x, formula = ~1, hypothesis = NULL, n.imp = 500, n.bins = 200,
         nsue_i$y <- x$y[-i]
         nsue_i$y_lo <- x$y_lo[-i]
         nsue_i$y_up <- x$y_up[-i]
-        if (measure == "cor" || measure == "cor in smd") {
-            nsue_i$y.var <- x$y.var[-i]
-        }
-        if (measure == "smc" || measure == "smd") {
-            nsue_i$y2var_k1 <- x$y2var_k1[-i]
-            nsue_i$y2var_k2 <- x$y2var_k2[-i]
-        }
-        if (measure == "cor in smd") {
-            nsue_i$smd = x$smd[-i, ]
-        }
+        nsue_i$aux <- x$aux[-i, ]
         nsue_i$labels <- x$labels[-i]
         class(nsue_i) <- "nsue"
         model_i$matrix <- as.matrix(model$matrix[-i, ])
         obj[[i]] <- list(study = x$labels[i], meta = .meta.nsue(nsue_i, 
-            model_i, hypothesis, n.imp, n.bins, maxiter, tol))
+            model_i, hypothesis, n.imp, maxiter, tol))
     }
     class(obj) <- "leave1out.nsue"
     obj
@@ -1049,12 +783,12 @@ meta <-
 function (x, ...) 
 UseMethod("meta")
 meta.nsue <-
-function (x, formula = ~1, hypothesis = NULL, n.imp = 500, n.bins = 200, 
-    maxiter = 200, tol = 1e-06, ...) 
+function (x, formula = ~1, hypothesis = NULL, n.imp = 500, maxiter = 200, 
+    tol = 1e-06, ...) 
 {
     call <- match.call()
     if (!inherits(x, "nsue")) {
-        .stop(call, "Use an smc_from_t, smd_from_t or r_from_z call as the first (nsue) argument.")
+        .stop(call, "Use an nsue, smc_from_t, smd_from_t or r_from_z call as the first (nsue) argument.")
     }
     n.stud <- length(x$y)
     model <- .check.formula(call, formula, n.stud)
@@ -1062,8 +796,7 @@ function (x, formula = ~1, hypothesis = NULL, n.imp = 500, n.bins = 200,
     if (n.imp < 2) {
         .stop(call, "The number of imputations must be at least 2")
     }
-    .meta.nsue(x, model, hypothesis, n.imp, n.bins, maxiter, 
-        tol)
+    .meta.nsue(x, model, hypothesis, n.imp, maxiter, tol)
 }
 metabias <-
 function (x, ...) 
@@ -1074,45 +807,101 @@ function (x, maxiter = 100, tol = 1e-06, ...)
     if (!inherits(x, "meta.nsue")) {
         .stop(match.call(), "The argument must be a 'meta.nsue' object")
     }
-    if (nrow(x$rm$M) < length(x$known$i) + length(x$unknown$i)) {
-        .warning("This analysis does not take repeated measures into account")
-    }
-    measure <- x$measure
     known <- x$known$i
     unknown <- x$unknown$i
-    mi_y = x$unknown$y
-    X <- x$model$matrix
-    n.coef_j <- ncol(x$model$matrix) + 1
-    y <- c()
+    n.stud <- length(known) + length(unknown)
+    y <- rep(NA, n.stud)
     y[known] <- x$known$y
-    se_coef <- c()
-    se_coef_var <- c()
-    for (j in 1:max(c(1, ncol(mi_y)))) {
-        if (ncol(mi_y) > 0) {
-            y[unknown] <- mi_y[, j]
-        }
-        if (measure == "cor" || measure == "cor in smd") {
-            y.var <- x$y.var
-        }
-        if (measure == "smc" || measure == "smd") {
-            y.var <- x$y2var_k1 + x$y2var_k2 * y^2
+    aux <- x$aux
+    y2var = x$y2var
+    y.var <- y2var(aux, y)
+    X <- x$model$matrix
+    n.coef <- ncol(x$model$matrix) + 1
+    mi.y <- x$unknown$y
+    mi.hcoef <- c()
+    mi.hvar <- c()
+    for (j in 1:max(c(1, ncol(mi.y)))) {
+        if (ncol(mi.y) > 0) {
+            y[unknown] <- mi.y[, j]
+            y.var[unknown] <- y2var(aux, mi.y[, j], unknown)
         }
         X_j <- cbind(X, sqrt(y.var))
-        W <- diag(1/(y.var + .tau2.reml(y, y.var, X_j, maxiter, 
-            tol)))
-        inv_XtWX <- solve(t(X_j) %*% W %*% X_j)
-        se_coef <- c(se_coef, (inv_XtWX %*% t(X_j) %*% W %*% 
-            y)[n.coef_j])
-        se_coef_var <- c(se_coef_var, diag(inv_XtWX)[n.coef_j])
+        tau2_j <- .tau2.reml(y, y.var, X_j, maxiter, tol)
+        W_j <- diag(1/(y.var + tau2_j))
+        cov_j <- solve(t(X_j) %*% W_j %*% X_j)
+        coef_j <- cov_j %*% t(X_j) %*% W_j %*% y
+        mi.hcoef <- c(mi.hcoef, coef_j[n.coef])
+        mi.hvar <- c(mi.hvar, cov_j[n.coef, n.coef])
     }
-    z <- mean(se_coef)/sqrt(.pool.var(se_coef, se_coef_var))
-    names(z) <- "z"
-    p <- 2 * pnorm(-abs(z))
+    hcoef <- .pool(mi.hcoef)
+    hvar <- .pool.var(mi.hcoef, mi.hvar)
+    hz <- hcoef/sqrt(hvar)
+    names(hz) <- "z"
     x <- list(method = "'meta.nsue' regression test for funnel plot asymmetry", 
-        data.name = as.character(match.call()[2]), statistic = z, 
-        p.value = p)
+        data.name = as.character(match.call()[2]), statistic = hz, 
+        p.value = 2 * pnorm(-abs(hz)))
     class(x) <- "htest"
     x
+}
+nsue <-
+function (y, y_lo = -y_up, y_up, aux, y2var, mi, backtransf = .backtransf_identity, 
+    measure = "effect size", labels = "study") 
+{
+    if (!is.numeric(y)) {
+        .stop(call, "y must be a numeric vector")
+    }
+    n.stud <- length(y)
+    if (!is.numeric(y_lo)) {
+        .stop(call, "y_lo must be a numeric vector")
+    }
+    if (length(y_lo) != n.stud) {
+        .stop(call, "y_lo has an incorrect length")
+    }
+    if (!is.numeric(y_up)) {
+        .stop(call, "y_up must be a numeric vector")
+    }
+    if (length(y_up) != n.stud) {
+        .stop(call, "y_up has an incorrect length")
+    }
+    if (!is.data.frame(aux)) {
+        .stop(call, "aux must be a data.frame")
+    }
+    if (nrow(aux) != n.stud) {
+        .stop(call, "aux has an incorrect number of rows")
+    }
+    if (!is.function(y2var)) {
+        .stop(call, "y2var must be a function")
+    }
+    if (!is.function(mi)) {
+        .stop(call, "mi must be a function")
+    }
+    if (!is.function(backtransf)) {
+        .stop(call, "backtransf must be a function")
+    }
+    if (!is.numeric(y)) {
+        .stop(call, "y must be a numeric vector")
+    }
+    if (!is.vector(measure) && !is.factor(measure) && length(measure) != 
+        1) {
+        .stop(call, "measure must be a vector of length 1")
+    }
+    if (!is.vector(labels) && !is.factor(labels)) {
+        .stop(call, "labels must be a vector")
+    }
+    if (length(labels) == 1) {
+        labels = paste0(labels, 1:n.stud)
+    }
+    else if (length(labels) != length(unique(labels))) {
+        .stop(call, "labels must be unique")
+    }
+    else if (length(labels) != n.stud) {
+        .stop(call, "labels has an incorrect length")
+    }
+    obj <- list(y = y, y_lo = y_lo, y_up = y_up, aux = aux, y2var = y2var, 
+        mi = mi, backtransf = backtransf, measure = as.character(measure), 
+        labels = as.character(labels))
+    class(obj) <- "nsue"
+    obj
 }
 plot.meta.nsue <-
 function (x, ...) 
@@ -1130,7 +919,7 @@ function (x, ...)
     }
     cat("\n")
     cat("Meta-analysis description:\n")
-    cat("- Measure:", .format.measure(x[[1]]$meta$measure), "\n")
+    cat("- Measure:", x[[1]]$meta$measure, "\n")
     cat("- Model: measure", x[[1]]$meta$model$formula, "\n")
     cat("- Hypothesis: ", paste(x$hypothesis$text, collapse = " & "), 
         "\n")
@@ -1157,18 +946,13 @@ function (x, ...)
     }
     cat("\n")
     cat("Meta-analysis description:\n")
-    cat("- Measure:", .format.measure(x$measure), "\n")
-    cat("- Known measures:", length(x$known$i), "\n")
+    cat("- Measure:", x$measure, "\n")
+    cat("- Known effects:", length(x$known$i), "\n")
     if (length(x$known$i) == 0) {
-        .warning("No known measures!")
+        .warning("No known effects!")
     }
-    cat("- Non-statistically-significant unknown measures:", 
-        length(x$unknown$i), "\n")
-    rm.n.stud = nrow(x$rm$M)
-    if (rm.n.stud < length(x$known$i) + length(x$unknown$i)) {
-        cat("- Measures after combination of repeated-measures:", 
-            rm.n.stud, "\n")
-    }
+    cat("- Non-statistically-significant unknown effects:", length(x$unknown$i), 
+        "\n")
     cat("- Imputations:", ncol(x$unknown$y), "\n")
     cat("- Model: measure", x$model$formula, "\n")
     cat("- Hypothesis: ", paste(x$hypothesis$text, collapse = " & "), 
@@ -1188,125 +972,16 @@ function (x, ...)
 {
     cat("\n")
     cat("'nsue' object description:\n")
-    cat("- Measure:", .format.measure(x$measure), "\n")
+    cat("- Measure:", x$measure, "\n")
     known.n.stud = sum(!is.na(x$y))
     unknown.n.stud = sum(is.na(x$y))
-    cat("- Known measures:", known.n.stud, "\n")
+    cat("- Known effects:", known.n.stud, "\n")
     if (known.n.stud == 0) {
-        .warning("No known measures!")
+        .warning("No known effects!")
     }
-    cat("- Non-statistically-significant unknown measures:", 
-        sum(is.na(x$y)), "\n")
+    cat("- Non-statistically-significant unknown effects:", sum(is.na(x$y)), 
+        "\n")
     cat("\n")
-}
-r_in_smd_from_t_means_and_sds1 <-
-function (t, n1, mean1.pre, sd1.pre, mean1.post, sd1.post, n2, 
-    mean2.pre, sd2.pre, mean2.post, sd2.post, alpha = 0.05, labels = "study", 
-    r.range = c(0, 0.99), rm.r = 0.3) 
-{
-    call <- match.call()
-    if (missing(t) || missing(n1) || missing(n2)) {
-        .stop(call, "You must specify t, n1, mean1.pre, sd1.pre, mean1.post, sd1.post, n2, mean2.pre, sd2.pre, mean2.post and sd2.post")
-    }
-    if (!is.numeric(t)) {
-        .stop(call, "t is not a numeric vector")
-    }
-    n.stud <- length(t)
-    if (!n.stud) {
-        .stop(call, "No studies to meta-analyze")
-    }
-    n1 <- .check.n(call, n1, 2, n.stud)
-    if (!is.numeric(mean1.pre)) {
-        .stop(call, "mean1.pre is not a numeric vector")
-    }
-    if (!is.numeric(sd1.pre) || any(sd1.pre < 0)) {
-        .stop(call, "sd1.pre is not a positive numeric vector")
-    }
-    if (!is.numeric(mean1.post)) {
-        .stop(call, "mean1.post is not a numeric vector")
-    }
-    if (!is.numeric(sd1.post) || any(sd1.post < 0)) {
-        .stop(call, "sd1.post is not a positive numeric vector")
-    }
-    n2 <- .check.n(call, n2, 2, n.stud)
-    if (!is.numeric(mean2.pre)) {
-        .stop(call, "mean2.pre is not a numeric vector")
-    }
-    if (!is.numeric(sd2.pre) || any(sd2.pre < 0)) {
-        .stop(call, "sd2.pre is not a positive numeric vector")
-    }
-    if (!is.numeric(mean2.post)) {
-        .stop(call, "mean2.post is not a numeric vector")
-    }
-    if (!is.numeric(sd2.post) || any(sd2.post < 0)) {
-        .stop(call, "sd2.post is not a positive numeric vector")
-    }
-    alpha <- .check.alpha(call, alpha, n.stud)
-    labels <- .check.labels(call, labels, n.stud)
-    if (!is.numeric(r.range) || r.range[1] > r.range[2] || r.range[1] < 
-        -1 || r.range[2] > 1) {
-        .stop(call, "Incorrect r.range")
-    }
-    if (!is.numeric(rm.r) || rm.r < -1 || rm.r > 1) {
-        .stop(call, "Incorrect rm.r")
-    }
-    for (i in 1:n.stud) {
-        if ((is.na(t[i]) && is.na(alpha[i])) || is.na(n1[i]) || 
-            is.na(n2[i])) {
-            .stop("Not enough information in study", labels[i])
-        }
-    }
-    n <- n1 + n2
-    df <- n - 2
-    inv_n1_n2 <- 1/n1 + 1/n2
-    j <- .d_j(df)
-    df1 <- n1 - 1
-    df2 <- n2 - 1
-    diff <- mean1.post - mean1.pre - mean2.post + mean2.pre
-    k_t2var <- diff^2/inv_n1_n2
-    var1.sum <- sd1.pre^2 + sd1.post^2
-    var2.sum <- sd2.pre^2 + sd2.post^2
-    sd1.prod <- sd1.pre * sd1.post
-    sd2.prod <- sd2.pre * sd2.post
-    r.min <- r.range[1]
-    r.max <- r.range[2]
-    obj <- list(measure = "cor in smd", y = atanh(.r_in_smd_from_sds(k_t2var/t^2, 
-        df1, var1.sum, sd1.prod, df2, var2.sum, sd2.prod, r.min, 
-        r.max)), y_lo = atanh(rep(r.min, n.stud)), y_up = atanh(rep(r.max, 
-        n.stud)), y.var = (n2/n)^2/(n1 - 3) + (n1/n)^2/(n2 - 
-        3), smd = data.frame(diff, df1, var1.sum, sd1.prod, df2, 
-        var2.sum, sd2.prod, j = j, y2var_k1 = inv_n1_n2, y2var_k2 = 1 - 
-            (df - 2)/(df * j^2)), labels = labels, rm = list(r = rm.r))
-    class(obj) <- "nsue"
-    obj
-}
-r_in_smd_from_t_means_and_sds2 <-
-function (x, formula = ~1, hypothesis = NULL, maxiter = 200, 
-    tol = 1e-06) 
-{
-    call <- match.call()
-    is_meta = inherits(x, "meta.nsue")
-    is_leave1out = inherits(x, "leave1out.nsue")
-    if (!is_meta && !is_leave1out) {
-        .stop(call, "The argument must be a 'meta.nsue' or 'leave1out.nsue' object")
-    }
-    if (is_leave1out) {
-        n.stud = length(x[[1]]$meta$known$i) + length(x[[1]]$meta$unknown$i)
-    }
-    else {
-        n.stud = length(x$known$i) + length(x$unknown$i)
-    }
-    model <- .check.formula(call, formula, n.stud)
-    hypothesis <- .check.hypothesis(call, hypothesis, model)
-    if (is_leave1out) {
-        for (i in 1:length(x)) {
-            x[[i]]$meta = .r_in_smd_from_t_means_and_sds2(x[[i]]$meta, 
-                model, hypothesis, maxiter, tol)
-        }
-        return(x)
-    }
-    .r_in_smd_from_t_means_and_sds2(x, model, hypothesis, maxiter, 
-        tol)
 }
 residuals.meta.nsue <-
 function (object, ...) 
@@ -1317,20 +992,19 @@ function (object, ...)
     residuals[known.i] <- object$known$y - fitted[known.i]
     unknown.i <- object$unknown$i
     if (length(object$unknown$i) > 0) {
-        residuals[unknown.i] <- apply(object$unknown$y, 1, mean) - 
-            fitted[unknown.i]
+        residuals[unknown.i] <- .pool(object$unknown$y) - fitted[unknown.i]
     }
     residuals
 }
 smc_from_t <-
-function (t, n, alpha = 0.05, labels = "study", rm.r = 0.3) 
+function (t, n, alpha = 0.05, labels = "study") 
 {
     call <- match.call()
     if (missing(t) || missing(n)) {
         .stop(call, "You must specify t and n")
     }
     if (!is.numeric(t)) {
-        .stop(call, "t is not a numeric vector")
+        .stop(call, "t must be a numeric vector")
     }
     n.stud <- length(t)
     if (!n.stud) {
@@ -1338,35 +1012,27 @@ function (t, n, alpha = 0.05, labels = "study", rm.r = 0.3)
     }
     n <- .check.n(call, n, 3, n.stud)
     alpha <- .check.alpha(call, alpha, n.stud)
-    labels <- .check.labels(call, labels, n.stud)
-    if (!is.numeric(rm.r) || rm.r < -1 || rm.r > 1) {
-        .stop(call, "Incorrect rm.r")
-    }
     for (i in 1:n.stud) {
         if ((is.na(t[i]) && is.na(alpha[i])) || is.na(n[i])) {
             stop("Not enough information in study", labels[i])
         }
     }
     df <- n - 1
-    inv_n <- 1/n
     j <- .d_j(df)
-    k_t2d <- j * sqrt(inv_n)
-    y_up <- k_t2d * qt(1 - alpha/2, df)
-    obj <- list(measure = "smc", y = k_t2d * t, y_lo = -y_up, 
-        y_up = y_up, y2var_k1 = inv_n, y2var_k2 = 1 - (df - 2)/(df * 
-            j^2), labels = labels, rm = list(r = rm.r))
-    class(obj) <- "nsue"
-    obj
+    nsue(y = j * sqrt(1/n) * t, y_up = j * sqrt(1/n) * qt(1 - 
+        alpha/2, df), aux = data.frame(n, df, j), y2var = .y2var_smc, 
+        mi = .mi_g, measure = "Standardized mean change (Hedges corrected)", 
+        labels = labels)
 }
 smd_from_t <-
-function (t, n1, n2, alpha = 0.05, labels = "study", rm.r = 0.3) 
+function (t, n1, n2, alpha = 0.05, labels = "study") 
 {
     call <- match.call()
     if (missing(t) || missing(n1) || missing(n2)) {
         .stop(call, "You must specify t, n1 and n2")
     }
     if (!is.numeric(t)) {
-        .stop(call, "t is not a numeric vector")
+        .stop(call, "t must be a numeric vector")
     }
     n.stud <- length(t)
     if (!n.stud) {
@@ -1375,27 +1041,18 @@ function (t, n1, n2, alpha = 0.05, labels = "study", rm.r = 0.3)
     n1 <- .check.n(call, n1, 2, n.stud)
     n2 <- .check.n(call, n2, 2, n.stud)
     alpha <- .check.alpha(call, alpha, n.stud)
-    labels <- .check.labels(call, labels, n.stud)
-    if (!is.numeric(rm.r) || rm.r < -1 || rm.r > 1) {
-        .stop(call, "Incorrect rm.r")
-    }
     for (i in 1:n.stud) {
         if ((is.na(t[i]) && is.na(alpha[i])) || is.na(n1[i]) || 
             is.na(n2[i])) {
             stop("Not enough information in study", labels[i])
         }
     }
-    n <- n1 + n2
-    df <- n - 2
-    inv_n1_n2 <- 1/n1 + 1/n2
+    df <- n1 + n2 - 2
     j <- .d_j(df)
-    k_t2d <- j * sqrt(inv_n1_n2)
-    y_up = k_t2d * qt(1 - alpha/2, df)
-    obj <- list(measure = "smd", y = k_t2d * t, y_lo = -y_up, 
-        y_up = y_up, y2var_k1 = inv_n1_n2, y2var_k2 = 1 - (df - 
-            2)/(df * j^2), labels = labels, rm = list(r = rm.r))
-    class(obj) <- "nsue"
-    obj
+    nsue(y = j * sqrt(1/n1 + 1/n2) * t, y_up = j * sqrt(1/n1 + 
+        1/n2) * qt(1 - alpha/2, df), aux = data.frame(n1, n2, 
+        df, j), y2var = .y2var_smd, mi = .mi_g, measure = "Standardized mean difference (Hedges corrected)", 
+        labels = labels)
 }
 subset.nsue <-
 function (x, subset, ...) 
@@ -1410,22 +1067,12 @@ function (x, subset, ...)
     if (length(subset) != length(x$y)) {
         .stop(call, "wrong length")
     }
-    measure <- x$measure
-    selected = which(subset)
+    selected <- which(subset)
     x$y <- x$y[selected]
     x$y_lo <- x$y_lo[selected]
     x$y_up <- x$y_up[selected]
-    if (measure == "cor" || measure == "cor in smd") {
-        x$y.var <- x$y.var[selected]
-    }
-    if (measure == "smc" || measure == "smd") {
-        x$y2var_k1 <- x$y2var_k1[selected]
-        x$y2var_k2 <- x$y2var_k2[selected]
-    }
+    x$aux <- x$aux[selected, ]
     x$labels <- x$labels[selected]
-    if (measure == "cor in smd") {
-        x$smd <- x$smd[selected, ]
-    }
     x
 }
 summary.leave1out.nsue <-
@@ -1463,18 +1110,16 @@ function (object, ...)
     cat("\n")
     invisible(object)
 }
-z_from_r <-
-function (r, n, alpha = 0.05, labels = "study", rm.r = 0.3) 
+zcor_from_r <-
+function (r, n, alpha = 0.05, labels = "study") 
 {
     call <- match.call()
     if (missing(r) || missing(n)) {
         .stop(call, "You must specify r and n")
     }
-    if (!is.numeric(r)) {
-        .stop(call, "r is not a numeric vector")
-    }
-    if (any(r < -1, na.rm = TRUE) || any(r > 1, na.rm = TRUE)) {
-        .stop(call, "r cannot be <= -1 or >= 1")
+    if (!is.numeric(r) || any(r < -1, na.rm = TRUE) || any(r > 
+        1, na.rm = TRUE)) {
+        .stop(call, "r must be a numeric vector with values between -1 and 1")
     }
     n.stud <- length(r)
     if (!n.stud) {
@@ -1482,18 +1127,13 @@ function (r, n, alpha = 0.05, labels = "study", rm.r = 0.3)
     }
     n <- .check.n(call, n, 4, n.stud)
     alpha <- .check.alpha(call, alpha, n.stud)
-    labels <- .check.labels(call, labels, n.stud)
-    if (!is.numeric(rm.r) || rm.r < -1 || rm.r > 1) {
-        .stop(call, "Incorrect rm.r")
-    }
     for (i in 1:n.stud) {
         if ((is.na(r[i]) && is.na(alpha[i])) || is.na(n[i])) {
             stop("Not enough information in study", labels[i])
         }
     }
-    y_up = atanh((1 + (n - 2)/qt(alpha/2, n - 2)^2)^-0.5)
-    obj <- list(measure = "cor", y = atanh(r), y_lo = -y_up, 
-        y_up = y_up, y.var = 1/(n - 3), labels = labels, rm = list(r = rm.r))
-    class(obj) <- "nsue"
-    obj
+    nsue(y = atanh(r), y_up = atanh(1/sqrt(1 + (n - 2)/qt(alpha/2, 
+        n - 2)^2)), y2var = .y2var_zr, aux = data.frame(n), mi = .mi_z, 
+        backtransf = .backtransf_tanh, measure = "Pearson correlation coefficient (using Fisher's transform)", 
+        labels = labels)
 }

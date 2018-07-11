@@ -1,3 +1,15 @@
+metansue v2.2 (Release date: 2018-07-11)
+========================================
+
+Changes:
+
+* Objects of class "nsue" include now the function to calculate the variance from the effect size, the function to multiply impute, and the function to back-transform. This allows users to create their own objects of class "nsue" for effect sizes not included in the package.
+* The funnel function now plots the studies with NSUEs as smooths dots representing several imputations.
+* For "visual" compatibility with standard meta-analyses, heterogeneity test now reports a Q statistic (instead of an F statistic).
+* Function "z_from_r" has been renamed as "zcor_from_r".
+* Adjustment for repeated measures and functions "r_in_smd_from_t_means_and_sds1" and "r_in_smd_from_t_means_and_sds2" have been discontinued, please use older releases of the package to use them.
+
+
 metansue v2.1 (Release date: 2018-03-13)
 ========================================
 
@@ -12,7 +24,7 @@ metansue v2.0 (Release date: 2017-07-21)
 Changes:
 
 * Several improvements in robustness. These changes imply that "data" argument is no longer required, that a single hypothesis can be specified in "meta", and that the following functions for "meta.nsue" objects have been removed: "linearHypothesis", "metalm" and "subset".
-* Added "subset" function for "nsue" objects.
+* Added "subset" function for objects of class "nsue".
 * Default number of imputations has been increased to 500.
 
 

@@ -9,20 +9,19 @@
 \usage{
 leave1out(x, ...)
 
-\method{leave1out}{nsue}(x, formula = ~1, hypothesis = NULL,
-    n.imp = 500, n.bins = 200, maxiter = 200, tol = 1e-06, ...)
+\method{leave1out}{nsue}(x, formula = ~1, hypothesis = NULL, 
+    n.imp = 500, maxiter = 200, tol = 1e-06, ...)
 }
 \arguments{
   \item{x}{an object of class \code{"nsue"}.}
   \item{formula}{an object of class \code{"formula"}: a symbolic description of the model to be fitted.}
   \item{hypothesis}{a hypothesis, or \code{NULL} to simply test the coefficients of the model.}
   \item{n.imp}{number of imputations of NSUEs per study.}
-  \item{n.bins}{number of bins used in the imputations.}
   \item{maxiter}{maximum number of iterations in the REML estimation of \eqn{\tau^2}.}
   \item{tol}{tolerance in the REML estimation of \eqn{\tau^2}.}
   \item{...}{other arguments (currently ignored).}
 }
-\details{Use \code{\link{smc_from_t}}, \code{\link[=smc_from_t]{smd_from_t}}, \code{\link[=smc_from_t]{z_from_r}} or \code{\link[=smc_from_t]{r_in_smd_from_t_means_and_sds1}} to create \code{"nsue"} objects.
+\details{Use \code{\link{nsue}}, \code{\link[=nsue]{smc_from_t}}, \code{\link[=nsue]{smd_from_t}} or \code{\link[=nsue]{zcor_from_r}} to create objects of class \code{"nsue"}.
 
 Models for \code{\link{meta}} and \code{leave1out} are specified symbolically. The \code{formula} is a series of terms which specify a linear predictor for \code{x}. A formula specification of the form \code{first + second} indicates a multiple regression by \code{first} and \code{second}.  A specification of the form \code{first:second} indicates the interaction of \code{first} with \code{second}. The specification \code{first*second} is the same as \code{first + second + first:second}.
 
@@ -39,7 +38,7 @@ Each hypothesis must be a matrix (or vector) giving linear combinations of coeff
 }
 \author{Joaquim Radua}
 \seealso{
-  \code{\link{smc_from_t}}, \code{\link[=smc_from_t]{smd_from_t}}, \code{\link[=smc_from_t]{z_from_r}} and \code{\link[=smc_from_t]{r_in_smd_from_t_means_and_sds1}} for creating \code{"nsue"} objects.
+  \code{\link{nsue}}, \code{\link[=nsue]{smc_from_t}}, \code{\link[=nsue]{smd_from_t}} and \code{\link[=nsue]{zcor_from_r}} for creating objects of class \code{"nsue"}.
 
   \code{\link{meta}} for conducting a meta-analysis.
 }

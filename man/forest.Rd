@@ -5,9 +5,10 @@
 \concept{plot}
 \title{Forest Plots for \dQuote{meta.nsue} Objects}
 \description{Draws a forest plot.}
-\usage{forest(x, ...)}
+\usage{forest(x, width, ...)}
 \arguments{
   \item{x}{an object of class \code{"meta.nsue"}.}
+  \item{width}{the width of the plot, expressed as the maximum effect size that would be still plotted.}
   \item{...}{other arguments (currently ignored).}
 }
 \details{The plot shows the observed or imputed effect sizes of the studies with the corresponding 95\% confidence intervals. A light gray shadow shows the interval containing 95\% of the imputations for studies with Non Statistically-Significant Unreported Effects (NSUEs).
