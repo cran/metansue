@@ -7,12 +7,12 @@
 \alias{residuals.meta.nsue}
 \alias{summary.meta.nsue}
 \concept{meta-analysis}
-\title{Meta-Analysis of Studies with Non Statistically-Significant Unreported Effects}
-\description{Conduct a meta-analysis. MetaNSUE is a meta-analytic method that allows an unbiased inclusion of studies with Non Statistically-Significant Unreported Effects (NSUEs).}
+\title{Meta-Analysis of Studies with Non-statistically Significant Unreported Effects}
+\description{Conduct a meta-analysis. MetaNSUE is a meta-analytic method that allows an unbiased inclusion of studies with Non-statistically Significant Unreported Effects (NSUEs).}
 \usage{
 meta(x, ...)
 
-\method{meta}{nsue}(x, formula = ~1, hypothesis = NULL, 
+\method{meta}{nsue}(x, formula = ~1, hypothesis = NULL,
     n.imp = 500, maxiter = 200, tol = 1e-06, ...)
 }
 \arguments{
@@ -50,6 +50,10 @@ Each hypothesis must be a matrix (or vector) giving linear combinations of coeff
   Radua, J., Schmidt, A., Borgwardt, S., Heinz, A., Schlagenhauf, F., McGuire, P., Fusar-Poli, P. (2015)
   Ventral striatal activation during reward processing in psychosis. A neurofunctional meta-analysis.
   \emph{JAMA Psychiatry}, \bold{72}, 1243--51.
+
+  Albajes-Eizagirre, A., Solanes, A, Radua, J. (2018)
+  Meta-analysis of non-statistically significant unreported effects.
+  \emph{Statistical Methods in Medical Research}, in Press.
 }
 \author{Joaquim Radua}
 \seealso{

@@ -1,28 +1,39 @@
 c(
 	bibentry(
-	    bibtype = "Manual", 
-	    title = "{metansue}: Meta-Analysis of Studies with Non Statistically-Significant Unreported Effects", 
-	    author = person("Joaquim", "Radua"), 
-	    year = sub("-.*", "", meta$Date), 
-	    note = sprintf("R package version %s", meta$Version), 
-	    url = "http://www.metansue.com/", 
-	    url = "http://www.sdmproject.com/"
-	), 
+	    bibtype = "Manual",
+	    title = "{metansue}: Meta-Analysis of Studies with Non-Statistically Significant Unreported Effects",
+	    author = person("Joaquim", "Radua"),
+	    year = sub("-.*", "", meta$Date),
+	    note = sprintf("R package version %s", meta$Version),
+	    url = "https://www.metansue.com/",
+	    url = "https://www.sdmproject.com/"
+	),
 	bibentry(
-	    bibtype = "Article", 
-	    title = "Ventral striatal activation during reward processing in psychosis. A neurofunctional meta-analysis", 
+	    bibtype = "Article",
+	    title = "Ventral striatal activation during reward processing in psychosis. A neurofunctional meta-analysis",
 	    author = c(
-			person("Joaquim", "Radua"), 
-			person("Andre", "Schmidt"), 
-			person("Stefan", "Borgwardt"), 
-			person("Andreas", "Heinz"), 
-			person("Florian", "Schlagenhauf"), 
-			person("Philip", "McGuire"), 
+			person("Joaquim", "Radua"),
+			person("Andre", "Schmidt"),
+			person("Stefan", "Borgwardt"),
+			person("Andreas", "Heinz"),
+			person("Florian", "Schlagenhauf"),
+			person("Philip", "McGuire"),
 			person("Paolo", "Fusar-Poli")
-		), 
-	    journal = "JAMA Psychiatry", 
-	    year = 2015, 
-        volume = 72, 
+		),
+	    journal = "JAMA Psychiatry",
+	    year = 2015,
+        volume = 72,
         pages = c(1243, 1251)
+	),
+	bibentry(
+	    bibtype = "Article",
+	    title = "Meta-analysis of non-statistically significant unreported effects",
+	    author = c(
+			person("Albajes-Eizagirre", "Anton"),
+			person("Solanes", "Aleix"),
+			person("Joaquim", "Radua")
+		),
+	    journal = "Statistical Methods in Medical Research",
+	    year = 2018
 	)
 );

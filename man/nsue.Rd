@@ -8,16 +8,16 @@
 \title{Calculate Effect Sizes for \dQuote{meta.nsue} Objects}
 \description{These functions create objects of class \code{"nsue"}, ready to be used by \code{\link{meta}} and \code{\link{leave1out}}.}
 \usage{
-nsue(y, y_lo = -y_up, y_up, aux, y2var, mi, backtransf = .backtransf_identity, 
+nsue(y, y_lo = -y_up, y_up, aux, y2var, mi, backtransf = .backtransf_identity,
      measure = "effect size", labels = "study")
 smc_from_t(t, n, alpha = 0.05, labels = "study")
 smd_from_t(t, n1, n2, alpha = 0.05, labels = "study")
 zcor_from_r(r, n, alpha = 0.05, labels = "study")
 }
 \arguments{
-  \item{y}{a vector to specify the effect-sizes. Use NA in studies with Non Statistically-Significant Unreported Effects (NSUEs).}
-  \item{t}{a vector to specify the t-values of the studies. Use NA in studies with Non Statistically-Significant Unreported Effects (NSUEs).}
-  \item{r}{a vector to specify the correlation coefficients of the studies. Use NA in studies with Non Statistically-Significant Unreported Effects (NSUEs).}
+  \item{y}{a vector to specify the effect-sizes. Use NA in studies with Non-statistically Significant Unreported Effects (NSUEs).}
+  \item{t}{a vector to specify the t-values of the studies. Use NA in studies with Non-statistically Significant Unreported Effects (NSUEs).}
+  \item{r}{a vector to specify the correlation coefficients of the studies. Use NA in studies with Non-statistically Significant Unreported Effects (NSUEs).}
   \item{y_lo}{a vector to specify the effect-sizes corresponding to the lower statistical threshold.}
   \item{y_up}{a vector to specify the effect-sizes corresponding to the upper statistical threshold.}
   \item{aux}{a data.frame to specify information required for \code{y2var}, \code{mi} and / or \code{backtransf}.}
@@ -63,6 +63,10 @@ zcor_from_r(r, n, alpha = 0.05, labels = "study")
   Radua, J., Schmidt, A., Borgwardt, S., Heinz, A., Schlagenhauf, F., McGuire, P., Fusar-Poli, P. (2015)
   Ventral striatal activation during reward processing in psychosis. A neurofunctional meta-analysis.
   \emph{JAMA Psychiatry}, \bold{72}, 1243--51.
+
+  Albajes-Eizagirre, A., Solanes, A, Radua, J. (2018)
+  Meta-analysis of non-statistically significant unreported effects.
+  \emph{Statistical Methods in Medical Research}, in Press.
 }
 \author{Joaquim Radua}
 \seealso{

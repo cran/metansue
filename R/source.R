@@ -683,7 +683,7 @@ function (x, width = NULL, ...)
         text(2.1, pos.y_i, ci.text[i], pos = 4, col = col)
     }
     width <- round(diff(xlim))
-    height <- round(diff(ylim)/3)
+    height <- round((diff(ylim) + 5)/2.5)
     cat("\n")
     cat("Use pdf(filename, width, height) before calling forest to save it.\n")
     cat("The optimal width and height of this plot is ~", width, 
@@ -951,7 +951,7 @@ function (x, ...)
     if (length(x$known$i) == 0) {
         .warning("No known effects!")
     }
-    cat("- Non-statistically-significant unknown effects:", length(x$unknown$i), 
+    cat("- Non-statistically significant unknown effects:", length(x$unknown$i), 
         "\n")
     cat("- Imputations:", ncol(x$unknown$y), "\n")
     cat("- Model: measure", x$model$formula, "\n")
@@ -979,7 +979,7 @@ function (x, ...)
     if (known.n.stud == 0) {
         .warning("No known effects!")
     }
-    cat("- Non-statistically-significant unknown effects:", sum(is.na(x$y)), 
+    cat("- Non-statistically significant unknown effects:", sum(is.na(x$y)), 
         "\n")
     cat("\n")
 }

@@ -11,7 +11,7 @@
   \item{width}{the width of the plot, expressed as the maximum effect size that would be still plotted.}
   \item{...}{other arguments (currently ignored).}
 }
-\details{The plot shows the observed or imputed effect sizes of the studies with the corresponding 95\% confidence intervals. A light gray shadow shows the interval containing 95\% of the imputations for studies with Non Statistically-Significant Unreported Effects (NSUEs).
+\details{The plot shows the observed or imputed effect sizes of the studies with the corresponding 95\% confidence intervals. A light gray shadow shows the interval containing 95\% of the imputations for studies with Non-statistically Significant Unreported Effects (NSUEs).
 
 The effect size of the hypothesis of the model with the corresponding 95\% confidence intervals is added to the bottom of the forest plot.
 }

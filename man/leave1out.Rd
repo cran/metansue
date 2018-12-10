@@ -9,7 +9,7 @@
 \usage{
 leave1out(x, ...)
 
-\method{leave1out}{nsue}(x, formula = ~1, hypothesis = NULL, 
+\method{leave1out}{nsue}(x, formula = ~1, hypothesis = NULL,
     n.imp = 500, maxiter = 200, tol = 1e-06, ...)
 }
 \arguments{
@@ -28,13 +28,17 @@ Models for \code{\link{meta}} and \code{leave1out} are specified symbolically. T
 Each hypothesis must be a matrix (or vector) giving linear combinations of coefficients by rows.}
 \value{
  \code{leave1out} returns an object of class \code{"leave1out.nsue"}, which is a list containing a list for each iteration with the component \code{study} (the study discarded) and the component \code{meta}, which is an object of class \code{"meta.nsue"}.
- 
+
   The functions \code{print} and \code{summary} may be used to print the details or a summary of the results.
 }
 \references{
   Radua, J., Schmidt, A., Borgwardt, S., Heinz, A., Schlagenhauf, F., McGuire, P., Fusar-Poli, P. (2015)
   Ventral striatal activation during reward processing in psychosis. A neurofunctional meta-analysis.
   \emph{JAMA Psychiatry}, \bold{72}, 1243--51.
+
+  Albajes-Eizagirre, A., Solanes, A, Radua, J. (2018)
+  Meta-analysis of non-statistically significant unreported effects.
+  \emph{Statistical Methods in Medical Research}, in Press.
 }
 \author{Joaquim Radua}
 \seealso{

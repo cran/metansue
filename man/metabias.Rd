@@ -35,8 +35,13 @@ Also, publication bias cannot be excluded in case of negative results, whereas i
   Ventral striatal activation during reward processing in psychosis. A neurofunctional meta-analysis.
   \emph{JAMA Psychiatry}, \bold{72}, 1243--51.
 
-  Sterne, J.A., Sutton, A.J., Ioannidis, J.P., Terrin, N., Jones, D.R., Lau, J., Carpenter, J., 
-Rucker, G., Harbord, R.M., Schmid, C.H., Tetzlaff, J., Deeks, J.J., Peters, J., Macaskill, P., Schwarzer, G., Duval, S., Altman, D.G., Moher, D., Higgins, J.P. (2011)
+  Albajes-Eizagirre, A., Solanes, A, Radua, J. (2018)
+  Meta-analysis of non-statistically significant unreported effects.
+  \emph{Statistical Methods in Medical Research}, in Press.
+
+  Sterne, J.A., Sutton, A.J., Ioannidis, J.P., Terrin, N., Jones, D.R., Lau, J., Carpenter, J.,
+Rucker, G., Harbord, R.M., Schmid, C.H., Tetzlaff, J., Deeks, J.J., Peters, J., Macaskill, P.,
+Schwarzer, G., Duval, S., Altman, D.G., Moher, D., Higgins, J.P. (2011)
   Recommendations for examining and interpreting funnel plot asymmetry in meta-analyses of randomised controlled trials.
   \emph{BMJ}, \bold{343}, d4002, doi:10.1136/bmj.d4002.
 }

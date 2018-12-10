@@ -9,7 +9,7 @@
   \item{x}{an object of class \code{"meta.nsue"}.}
   \item{...}{other arguments (currently ignored).}
 }
-\details{The plot shows the residual effect size of the studies on the x-axis against their standard errors on the y-axis. A light gray shadow shows the ellipse approximately containing 95\% of the imputations for studies with Non Statistically-Significant Unreported Effects (NSUEs). A pseudo confidence interval region is drawn with a dashed line.
+\details{The plot shows the residual effect size of the studies on the x-axis against their standard errors on the y-axis. A light gray shadow shows the ellipse approximately containing 95\% of the imputations for studies with Non-statistically Significant Unreported Effects (NSUEs). A pseudo confidence interval region is drawn with a dashed line.
 
 Asymmetry in the funnel plot may be an indication of publication bias, but this should be taken with caution, especially if sample sizes are too similar, if there are subgroups, or if dichotomous outcomes have been used (some effect estimates are naturally correlated with their standard errors).
 

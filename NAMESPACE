@@ -1,12 +1,12 @@
 export(
-    forest, 
-    funnel, 
-    leave1out, 
-    meta, 
-    metabias, 
-    nsue, 
-    smc_from_t, 
-    smd_from_t, 
+    forest,
+    funnel,
+    leave1out,
+    meta,
+    metabias,
+    nsue,
+    smc_from_t,
+    smd_from_t,
     zcor_from_r
 )
 
@@ -26,10 +26,10 @@ S3method(subset, nsue)
 S3method(summary, leave1out.nsue)
 S3method(summary, meta.nsue)
 
-importFrom("graphics", "lines", "plot", "plot.new", "plot.window", 
+importFrom("graphics", "lines", "plot", "plot.new", "plot.window",
     "polygon", "strwidth", "text")
 importFrom("grDevices", "rgb")
-importFrom("stats", "as.formula", "cov", "dnorm", "lm.wfit", 
-    "model.matrix", "optim", "optimize", "pchisq", "pf", "pnorm", 
+importFrom("stats", "as.formula", "cov", "dnorm", "lm.wfit",
+    "model.matrix", "optim", "optimize", "pchisq", "pf", "pnorm",
     "qchisq", "qnorm", "qt", "quantile", "rnorm", "runif", "symnum",
     "var")
