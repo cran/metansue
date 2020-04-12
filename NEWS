@@ -1,3 +1,11 @@
+metansue v2.4 (Release date: 2020-04-12)
+========================================
+
+Changes:
+
+* Bugs fixed: the meta-analysis can include only one known and one unknown effect size.
+
+
 metansue v2.3 (Release date: 2018-12-10)
 ========================================
 

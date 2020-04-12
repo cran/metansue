@@ -243,10 +243,16 @@ function (x, model, hypothesis, n.imp, maxiter, tol)
                 if (n.coef == 1) {
                   interval = c(min(c(y[known_i], y_lo[unknown_i])), 
                     max(c(y[known_i], y_up[unknown_i])))
-                  coef_i <- optimize(.mll_coef, interval, known_i, 
-                    y[known_i], y.var[known_i], unknown_i, y_lo[unknown_i], 
-                    sqrt(y_lo.var[unknown_i]), y_up[unknown_i], 
-                    sqrt(y_up.var[unknown_i]), X)$minimum
+                  if (interval[1] == interval[2]) {
+                    coef_i = interval[1]
+                  }
+                  else {
+                    coef_i <- optimize(.mll_coef, interval, known_i, 
+                      y[known_i], y.var[known_i], unknown_i, 
+                      y_lo[unknown_i], sqrt(y_lo.var[unknown_i]), 
+                      y_up[unknown_i], sqrt(y_up.var[unknown_i]), 
+                      X)$minimum
+                  }
                 }
                 else {
                   initial_coef <- coef(lm.wfit(X[sample_i, ], 
