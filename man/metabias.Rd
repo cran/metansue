@@ -33,11 +33,11 @@ Also, publication bias cannot be excluded in case of negative results, whereas i
 
   Radua, J., Schmidt, A., Borgwardt, S., Heinz, A., Schlagenhauf, F., McGuire, P., Fusar-Poli, P. (2015)
   Ventral striatal activation during reward processing in psychosis. A neurofunctional meta-analysis.
-  \emph{JAMA Psychiatry}, \bold{72}, 1243--51.
+  \emph{JAMA Psychiatry}, \bold{72}, 1243--51, doi:10.1001/jamapsychiatry.2015.2196.
 
-  Albajes-Eizagirre, A., Solanes, A, Radua, J. (2018)
+  Albajes-Eizagirre, A., Solanes, A, Radua, J. (2019)
   Meta-analysis of non-statistically significant unreported effects.
-  \emph{Statistical Methods in Medical Research}, in Press.
+  \emph{Statistical Methods in Medical Research}, \bold{28}, 3741--54, doi:10.1177/0962280218811349.
 
   Sterne, J.A., Sutton, A.J., Ioannidis, J.P., Terrin, N., Jones, D.R., Lau, J., Carpenter, J.,
 Rucker, G., Harbord, R.M., Schmid, C.H., Tetzlaff, J., Deeks, J.J., Peters, J., Macaskill, P.,

@@ -206,8 +206,9 @@ function (p)
 .format.sign <-
 function (p) 
 {
-    symnum(p, cutpoints = c(0, 0.001, 0.01, 0.05, 0.1, 1), symbols = c("***", 
-        "**", "*", ".", " "), na = FALSE, corr = FALSE)
+    symnum(p, cutpoints = c(0, 0.001, 0.01, 0.050000000000000003, 
+        0.10000000000000001, 1), symbols = c("***", "**", "*", 
+        ".", " "), na = FALSE, corr = FALSE)
 }
 .meta.nsue <-
 function (x, model, hypothesis, n.imp, maxiter, tol) 
@@ -219,7 +220,7 @@ function (x, model, hypothesis, n.imp, maxiter, tol)
     x$y_lo = NULL
     x$y_up = NULL
     n.stud <- length(y)
-    known <- which(!is.na(y) | y_up - y_lo < 1e-06)
+    known <- which(!is.na(y) | y_up - y_lo < 9.9999999999999995e-07)
     unknown <- setdiff(1:n.stud, known)
     y[is.na(y)] = (y_up[is.na(y)] + y_lo[is.na(y)])/2
     aux <- x$aux
@@ -231,48 +232,54 @@ function (x, model, hypothesis, n.imp, maxiter, tol)
     n.coef = ncol(X)
     df <- nrow(X) - n.coef
     if (length(unknown)) {
-        coef = NULL
-        n.mle_discard = .estimate_n.mle_discard(n.stud)
-        mle_discard = c()
-        while (length(mle_discard) < n.mle_discard) {
-            min_hyp = Inf
-            for (i in setdiff(1:n.stud, mle_discard)) {
-                sample_i = (1:n.stud)[-c(mle_discard, i)]
-                known_i = sample_i[sample_i %in% known]
-                unknown_i = sample_i[sample_i %in% unknown]
-                if (n.coef == 1) {
-                  interval = c(min(c(y[known_i], y_lo[unknown_i])), 
-                    max(c(y[known_i], y_up[unknown_i])))
-                  if (interval[1] == interval[2]) {
-                    coef_i = interval[1]
+        if (n.stud == 1) {
+            .warning("Only one unknown effect and no known effects!")
+            mu = 0
+        }
+        else {
+            coef = NULL
+            n.mle_discard = .estimate_n.mle_discard(n.stud)
+            mle_discard = c()
+            while (length(mle_discard) < n.mle_discard) {
+                min_hyp = Inf
+                for (i in setdiff(1:n.stud, mle_discard)) {
+                  sample_i = (1:n.stud)[-c(mle_discard, i)]
+                  known_i = sample_i[sample_i %in% known]
+                  unknown_i = sample_i[sample_i %in% unknown]
+                  if (n.coef == 1) {
+                    interval = c(min(c(y[known_i], y_lo[unknown_i])), 
+                      max(c(y[known_i], y_up[unknown_i])))
+                    if (interval[1] == interval[2]) {
+                      coef_i = interval[1]
+                    }
+                    else {
+                      coef_i <- optimize(.mll_coef, interval, 
+                        known_i, y[known_i], y.var[known_i], 
+                        unknown_i, y_lo[unknown_i], sqrt(y_lo.var[unknown_i]), 
+                        y_up[unknown_i], sqrt(y_up.var[unknown_i]), 
+                        X)$minimum
+                    }
                   }
                   else {
-                    coef_i <- optimize(.mll_coef, interval, known_i, 
-                      y[known_i], y.var[known_i], unknown_i, 
-                      y_lo[unknown_i], sqrt(y_lo.var[unknown_i]), 
+                    initial_coef <- coef(lm.wfit(X[sample_i, 
+                      ], y[sample_i], 1/y.var[sample_i]))
+                    coef_i <- optim(initial_coef, .mll_coef, 
+                      gr = NULL, known_i, y[known_i], y.var[known_i], 
+                      unknown_i, y_lo[unknown_i], sqrt(y_lo.var[unknown_i]), 
                       y_up[unknown_i], sqrt(y_up.var[unknown_i]), 
-                      X)$minimum
+                      X)$par
+                  }
+                  hyp_i = sum(abs(hypothesis$matrix %*% coef_i))
+                  if (hyp_i < abs(min_hyp)) {
+                    min_hyp = hyp_i
+                    min_i = i
+                    min_coef = coef_i
                   }
                 }
-                else {
-                  initial_coef <- coef(lm.wfit(X[sample_i, ], 
-                    y[sample_i], 1/y.var[sample_i]))
-                  coef_i <- optim(initial_coef, .mll_coef, gr = NULL, 
-                    known_i, y[known_i], y.var[known_i], unknown_i, 
-                    y_lo[unknown_i], sqrt(y_lo.var[unknown_i]), 
-                    y_up[unknown_i], sqrt(y_up.var[unknown_i]), 
-                    X)$par
-                }
-                hyp_i = sum(abs(hypothesis$matrix %*% coef_i))
-                if (hyp_i < abs(min_hyp)) {
-                  min_hyp = hyp_i
-                  min_i = i
-                  min_coef = coef_i
-                }
+                mle_discard = c(mle_discard, min_i)
             }
-            mle_discard = c(mle_discard, min_i)
+            mu = X %*% min_coef
         }
-        mu = X %*% min_coef
         tau2 <- optimize(.mll_tau2, c(0, 999), (y[known] - mu[known])^2, 
             y.var[known], y_lo[unknown] - mu[unknown], y_lo.var[unknown], 
             y_up[unknown] - mu[unknown], y_up.var[unknown])$minimum
@@ -299,14 +306,30 @@ function (x, model, hypothesis, n.imp, maxiter, tol)
             y[unknown] <- mi.y[, j]
             y.var[unknown] <- y2var(aux, mi.y[, j], unknown)
         }
-        W_fe_j <- diag(1/y.var)
+        if (n.stud == 1) {
+            W_fe_j <- matrix(1/y.var)
+        }
+        else {
+            W_fe_j <- diag(1/y.var)
+        }
         P_fe_j <- W_fe_j - W_fe_j %*% X %*% solve(t(X) %*% W_fe_j %*% 
             X) %*% t(X) %*% W_fe_j
-        tau2_j <- .tau2.reml(y, y.var, X, maxiter, tol)
-        W_j <- diag(1/(y.var + tau2_j))
+        if (n.stud == 1) {
+            tau2_j <- 0
+            W_j <- as.matrix(1/y.var)
+        }
+        else {
+            tau2_j <- .tau2.reml(y, y.var, X, maxiter, tol)
+            W_j <- diag(1/(y.var + tau2_j))
+        }
         cov_j <- solve(t(X) %*% W_j %*% X)
         coef_j <- cov_j %*% t(X) %*% W_j %*% y
-        h2_j <- 1 + tau2_j/df * sum(diag(P_fe_j))
+        if (n.stud == 1) {
+            h2_j <- 1
+        }
+        else {
+            h2_j <- 1 + tau2_j/df * sum(diag(P_fe_j))
+        }
         i2_j <- 1 - 1/h2_j
         qe_j <- max(0, t(y) %*% P_fe_j %*% y)
         mi.coef <- cbind(mi.coef, coef_j)
@@ -323,9 +346,14 @@ function (x, model, hypothesis, n.imp, maxiter, tol)
         qe <- mi.qe
     }
     else {
-        f_df2 <- .pool.chi2(mi.qe, df)
-        qe <- qchisq(pf(f_df2[1], df, f_df2[2], log.p = TRUE), 
-            df, log.p = TRUE)
+        if (n.stud == 1) {
+            qe <- 0
+        }
+        else {
+            f_df2 <- .pool.chi2(mi.qe, df)
+            qe <- qchisq(pf(f_df2[1], df, f_df2[2], log.p = TRUE), 
+                df, log.p = TRUE)
+        }
     }
     hcoef <- c(hyp %*% coef)
     hcov <- hyp %*% cov %*% t(hyp)
@@ -489,8 +517,8 @@ function (x)
         cat("One-row hypothesis:\n")
         hypothesis <- cbind(.format.4(x$backtransf(x$aux, coef)), 
             .format.4(x$hypothesis$z), prob, .format.4(x$backtransf(x$aux, 
-                c(coef) + cbind(qnorm(0.025), qnorm(0.975)) * 
-                  se)), sign)
+                c(coef) + cbind(qnorm(0.025000000000000001), 
+                  qnorm(0.97499999999999998)) * se)), sign)
         colnames(hypothesis) <- c("Estimate", "z value", "Pr(>|z|)", 
             "CI(low)", "CI(up)", "")
     }
@@ -613,10 +641,10 @@ function (x, width = NULL, ...)
     pos.y <- c(n.stud + 2 - c(unknown, known), 0)
     if (unknown.n.stud) {
         y.low <- x$backtransf(x$aux, apply(x$unknown$y, 1, function(x) {
-            quantile(x, 0.025)
+            quantile(x, 0.025000000000000001)
         }))
         y.upp <- x$backtransf(x$aux, apply(x$unknown$y, 1, function(x) {
-            quantile(x, 0.975)
+            quantile(x, 0.97499999999999998)
         }))
         y_untransf <- c(.pool(x$unknown$y), x$known$y, x$hypothesis$coef[1])
         y.se <- c(sqrt(.pool.var(x$unknown$y, x$y2var(x$aux, 
@@ -628,17 +656,17 @@ function (x, width = NULL, ...)
         y.se <- c(sqrt(x$y2var(x$aux, x$known$y, known)), x$hypothesis$se[1])
     }
     y <- x$backtransf(x$aux, y_untransf)
-    ci.low <- x$backtransf(x$aux, y_untransf + qnorm(0.025) * 
+    ci.low <- x$backtransf(x$aux, y_untransf + qnorm(0.025000000000000001) * 
         y.se)
-    ci.upp <- x$backtransf(x$aux, y_untransf + qnorm(0.975) * 
+    ci.upp <- x$backtransf(x$aux, y_untransf + qnorm(0.97499999999999998) * 
         y.se)
     lwd <- 1/y.se
     lwd <- sqrt(9 + 216 * (lwd - min(lwd))/(max(lwd) - min(lwd)))
     ci.text <- paste0(.format.2(y), " [ ", .format.2(ci.low), 
         ", ", .format.2(ci.upp), " ] ", .format.sign(2 * pnorm(-abs(y_untransf/y.se))))
     if (is.null(width)) {
-        width <- .signif.up(max(abs(c(quantile(ci.low, 0.1), 
-            quantile(ci.upp, 0.9)))), 1)
+        width <- .signif.up(max(abs(c(quantile(ci.low, 0.10000000000000001), 
+            quantile(ci.upp, 0.90000000000000002)))), 1)
     }
     plot.new()
     xlim <- c(-2.5 - max(strwidth(labels, units = "inches")), 
@@ -677,16 +705,18 @@ function (x, width = NULL, ...)
             lines(c(max(ci.low_i/width * 2, -2), min(ci.upp_i/width * 
                 2, 2)), rep(pos.y_i, 2), lend = 2, col = col)
             if (ci.low_i > -width) {
-                lines(rep(ci.low_i/width * 2, 2), pos.y_i + c(-0.15, 
-                  0.15), lend = 2, col = col)
+                lines(rep(ci.low_i/width * 2, 2), pos.y_i + c(-0.14999999999999999, 
+                  0.14999999999999999), lend = 2, col = col)
             }
             if (ci.upp_i < width) {
-                lines(rep(ci.upp_i/width * 2, 2), pos.y_i + c(-0.15, 
-                  0.15), lend = 2, col = col)
+                lines(rep(ci.upp_i/width * 2, 2), pos.y_i + c(-0.14999999999999999, 
+                  0.14999999999999999), lend = 2, col = col)
             }
         }
-        text(-2.1, pos.y_i, labels[i], pos = 2, col = col)
-        text(2.1, pos.y_i, ci.text[i], pos = 4, col = col)
+        text(-2.1000000000000001, pos.y_i, labels[i], pos = 2, 
+            col = col)
+        text(2.1000000000000001, pos.y_i, ci.text[i], pos = 4, 
+            col = col)
     }
     width <- round(diff(xlim))
     height <- round((diff(ylim) + 5)/2.5)
@@ -722,7 +752,7 @@ function (x, ...)
     else {
         max.se <- .signif.up(max(known.se), 1)
     }
-    ci <- qnorm(0.975) * max.se
+    ci <- qnorm(0.97499999999999998) * max.se
     plot(NA, NA, type = "n", xlim = 1.3 * c(-ci, ci), ylim = c(max.se, 
         0), lty = 2, frame.plot = FALSE, xlab = "Residual effect size", 
         ylab = "Standard error")
@@ -735,11 +765,11 @@ function (x, ...)
     n.imp <- if (unknown.n.stud) {
         for (i in 1:unknown.n.stud) {
             for (j in round(quantile(order(unknown.res[i, ]), 
-                seq(0.01, 0.99, 0.01)))) {
+                seq(0.01, 0.98999999999999999, 0.01)))) {
                 lines(rep(unknown.res[i, j], 2), rep(unknown.se[i, 
-                  j], 2), lwd = 21, col = rgb(0, 0, 0, 0.003))
+                  j], 2), lwd = 21, col = rgb(0, 0, 0, 0.0030000000000000001))
                 lines(rep(unknown.res[i, j], 2), rep(unknown.se[i, 
-                  j], 2), lwd = 14, col = rgb(0, 0, 0, 0.005))
+                  j], 2), lwd = 14, col = rgb(0, 0, 0, 0.0050000000000000001))
                 lines(rep(unknown.res[i, j], 2), rep(unknown.se[i, 
                   j], 2), lwd = 7, col = rgb(0, 0, 0, 0.01))
             }
@@ -758,7 +788,7 @@ function (x, ...)
 UseMethod("leave1out")
 leave1out.nsue <-
 function (x, formula = ~1, hypothesis = NULL, n.imp = 500, maxiter = 200, 
-    tol = 1e-06, ...) 
+    tol = 9.9999999999999995e-07, ...) 
 {
     call <- match.call()
     y <- x$y
@@ -790,7 +820,7 @@ function (x, ...)
 UseMethod("meta")
 meta.nsue <-
 function (x, formula = ~1, hypothesis = NULL, n.imp = 500, maxiter = 200, 
-    tol = 1e-06, ...) 
+    tol = 9.9999999999999995e-07, ...) 
 {
     call <- match.call()
     if (!inherits(x, "nsue")) {
@@ -808,7 +838,7 @@ metabias <-
 function (x, ...) 
 UseMethod("metabias")
 metabias.meta.nsue <-
-function (x, maxiter = 100, tol = 1e-06, ...) 
+function (x, maxiter = 100, tol = 9.9999999999999995e-07, ...) 
 {
     if (!inherits(x, "meta.nsue")) {
         .stop(match.call(), "The argument must be a 'meta.nsue' object")
@@ -1003,7 +1033,7 @@ function (object, ...)
     residuals
 }
 smc_from_t <-
-function (t, n, alpha = 0.05, labels = "study") 
+function (t, n, alpha = 0.050000000000000003, labels = "study") 
 {
     call <- match.call()
     if (missing(t) || missing(n)) {
@@ -1031,7 +1061,7 @@ function (t, n, alpha = 0.05, labels = "study")
         labels = labels)
 }
 smd_from_t <-
-function (t, n1, n2, alpha = 0.05, labels = "study") 
+function (t, n1, n2, alpha = 0.050000000000000003, labels = "study") 
 {
     call <- match.call()
     if (missing(t) || missing(n1) || missing(n2)) {
@@ -1117,7 +1147,7 @@ function (object, ...)
     invisible(object)
 }
 zcor_from_r <-
-function (r, n, alpha = 0.05, labels = "study") 
+function (r, n, alpha = 0.050000000000000003, labels = "study") 
 {
     call <- match.call()
     if (missing(r) || missing(n)) {

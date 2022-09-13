@@ -34,6 +34,8 @@ c(
 			person("Joaquim", "Radua")
 		),
 	    journal = "Statistical Methods in Medical Research",
-	    year = 2018
+	    year = 2019,
+        volume = 28,
+        pages = c(3741, 3754)
 	)
 );
