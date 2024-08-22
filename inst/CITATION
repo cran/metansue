@@ -29,8 +29,8 @@ c(
 	    bibtype = "Article",
 	    title = "Meta-analysis of non-statistically significant unreported effects",
 	    author = c(
-			person("Albajes-Eizagirre", "Anton"),
-			person("Solanes", "Aleix"),
+			person("Anton", "Albajes-Eizagirre"),
+			person("Aleix", "Solanes"),
 			person("Joaquim", "Radua")
 		),
 	    journal = "Statistical Methods in Medical Research",
